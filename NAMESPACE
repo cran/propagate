@@ -1,0 +1,27 @@
+## functions
+export(
+propagate,
+makeGrad,
+makeHess,
+evalDerivs,
+mixCov,
+cor2cov,
+statVec,
+skewness,
+kurtosis,
+fitDistr,
+colVars,
+rowVars,
+colSDs,
+rowSDs,
+contribution,
+makeDat,
+numGrad,
+numHess,
+predictNLS,
+WelchSatter
+)
+
+## S3 methods
+S3method(print, propagate)
+S3method(plot, propagate)
