@@ -47,10 +47,13 @@ alpha = 0.05,
     ## create covariance matrix for 'propagate'       
     if (NCOL(tempDATA) == length(predVAR)) 
       forCOV <- rep(0, length(predVAR)) else forCOV <- tempDATA[, (length(predVAR) + 1):(2 * length(predVAR))] 
+    
     COV <- VCOV
+    
     for (k in 1:length(forCOV)) {      
       COV <- mixCov(COV, forCOV[k])
     }
+    
     SEL <- tail(1:nrow(COV), length(predVAR))
     dimnames(COV)[[1]][SEL] <- dimnames(COV)[[2]][SEL] <- predVAR      
       

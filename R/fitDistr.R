@@ -31,35 +31,43 @@ plot = TRUE,  ...)
     DENS$y <- DENS$density    
   } 
     
-  ## unweighted fitting  
-  if (is.null(weights)) wts <- rep(1, length(DENS$x)) else wts <- weights
-  if (length(wts) != length(DENS$x)) stop("'weights' must be a vector of length ", length(DENS$x), "!")
-  
+  ## unweighted fitting or weighted fitting 
+  if (is.null(weights)) wts <- rep(1, length(DENS$x)) 
+  if (isTRUE(weights) & type == "hist") {
+    wts <- 1/DENS$counts
+    wts[!is.finite(wts)] <- 1
+  }
+  if (is.numeric(weights)) {
+    if (length(weights) != length(DENS$x)) stop("'weights' must be a vector of length ", length(DENS$x), "!")
+    else wts <- weights
+  }
+    
   ## optimization function, minimum residual sum-of-squares is criterion
   optFun <- function(start, densfun, quantiles, density, eval = FALSE) {
     START <- as.list(start)
     START$x <- quantiles
          
     ## get density values from density function
-    FIT <- try(do.call(densfun, START), silent = TRUE) 
-    if (inherits(FIT, "try-error")) return (NA) 
-    if (!all(is.finite(FIT))) return(NA)   
+    EVAL <- try(do.call(densfun, START), silent = TRUE) 
+    if (inherits(EVAL, "try-error")) return(NA) 
+    #if (!all(is.finite(EVAL))) return(NA) 
+    EVAL[is.nan(EVAL)] <- 0
     
     ## residual sum-of-squares to density values of object
-    RSS <- sum(wts * (density - FIT)^2, na.rm = TRUE)   
-    if (eval) return(FIT) else return(RSS)   
+    RSS <- wts * (density - EVAL)^2       
+    if (eval) return(EVAL) else return(RSS)   
   }
   
   ## AIC function for optFun output
-  fitAIC <- function(fitobj, nobs) {
+  fitAIC <- function(fitobj) {
     ## taken and modified from stats:::logLik.nls
-    RESID <- fitobj$value
-    N <- nobs
+    RESID <- fitobj$fvec
+    N <- length(RESID)
     W <- wts
     ZW <- W == 0    
     VAL <- -N * (log(2 * pi) + 1 - log(N) - sum(log(W + ZW)) + log(sum(W * RESID^2)))/2
-    attr(VAL, "nobs") <- N
-    attr(VAL, "df") <- length(fitobj$par)
+    attr(VAL, "nobs") <- sum(!ZW)
+    attr(VAL, "df") <- 1L + length(fitobj$par)
     class(VAL) <- "logLik"
     AIC(VAL)
   }
@@ -148,7 +156,8 @@ plot = TRUE,  ...)
     if (verbose) cat("Fitting ", distNAMES[i]," distribution..", sep = "")
     
     ## use gridded 'optFun' if complicated distribution
-    if (distNAMES[i] %in% c("Johnson SU", "Johnson SB", "3P Weibull", "3P Beta")) {
+    if (distNAMES[i] %in% c("Johnson SU", "Johnson SB", "3P Weibull", "3P Beta",
+                            "Generalized normal")) {
       ## create grid of starting parameters or single paramater
       SEQ <- sapply(parLIST[[i]], function(x) x * 10^(-1:1))
       GRID <- do.call(expand.grid, split(SEQ, 1:ncol(SEQ)))       
@@ -162,26 +171,26 @@ plot = TRUE,  ...)
     for (j in 1:nrow(GRID)) {
       if (verbose) counter(j)
       PARS <- GRID[j, ]
-      FIT <- try(optim(par = PARS, fn = optFun, densfun = funLIST[[i]], quantiles = DENS$x,
-                       density = DENS$y, method = "Nelder", control = list(maxit = 1000)), silent = TRUE)
-      if (inherits(FIT, "try-error")) rssVEC[j] <- NA else rssVEC[j] <- FIT$value     
+      FIT <- try(nls.lm(par = PARS, fn = optFun, densfun = funLIST[[i]], quantiles = DENS$x,
+                       density = DENS$y, control = nls.lm.control(maxiter = 10000, maxfev = 10000)), silent = TRUE)
+      if (inherits(FIT, "try-error")) rssVEC[j] <- NA else rssVEC[j] <- FIT$deviance     
     }
     
     ## select parameter combination with lowest RSS and re-fit, if nrow(START > 1)
     if (length(rssVEC) > 1) {
       WHICH <- which.min(rssVEC) 
       bestPAR <- GRID[WHICH, ]
-      FIT <- try(optim(par = bestPAR, fn = optFun, densfun = funLIST[[i]], quantiles = DENS$x,
-                       density = DENS$y, method = "Nelder", control = list(maxit = 1000)), silent = TRUE)      
+      FIT <- try(nls.lm(par = bestPAR, fn = optFun, densfun = funLIST[[i]], quantiles = DENS$x,
+                       density = DENS$y, control = nls.lm.control(maxiter = 10000, maxfev = 10000)), silent = TRUE)      
     }   
-    
+      
     ## calculate AIC values
     if (inherits(FIT, "try-error")) {
       FIT <- NA
       if (verbose) cat("Error!\n")
     } else {
       fitLIST[[i]] <- FIT
-      AICS[i] <- tryCatch(fitAIC(FIT, length(DENS$x)), error = function(e) NA)
+      AICS[i] <- tryCatch(fitAIC(FIT), error = function(e) NA)
       if (verbose) cat("Done.\n")
     }    
   } 
@@ -208,7 +217,8 @@ plot = TRUE,  ...)
                               main = paste(distNAMES[SEL], "distribution, AIC =", round(AICS[SEL], 3)))
     lines(DENS$x, evalY, col = 2, lty = 2, lwd = 2)    
   }  
+      
+  names(fitLIST) <- distNAMES    
   
-  names(fitLIST) <- distNAMES  
   return(list(aic = aicDAT, fit = fitLIST, bestfit = bestFIT, fitted = evalY, residuals = DENS$y - evalY))
 }

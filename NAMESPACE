@@ -25,6 +25,7 @@ importFrom(ff, ff)
 importFrom(MASS, mvrnorm)
 importFrom(tmvtnorm, rtmvt)
 importFrom(Rcpp, sourceCpp)
+importFrom(minpack.lm, nls.lm)
 
 ## S3 methods
 S3method(print, propagate)

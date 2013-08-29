@@ -16,7 +16,7 @@ fitDistr(object, type = c("hist", "dens"), nbin = 100,
   \item{object}{an object of class 'propagate' or a vector containing observations.}
   \item{type}{propability density functions are fitted to either the density values of the \code{"hist"}ogram or of the kernel \code{"dens"}ity estimates.}
   \item{nbin}{in case of \code{type = "hist"}, the number of bins in the histogram.}
-  \item{weights}{a possible vector of weights to be used for weighted NLS fitting.}
+  \item{weights}{numeric or logical. Either a numeric vector of weights, or if \code{TRUE}, the distributions are fitted with weights = 1/(counts per bin).}
   \item{verbose}{logical. If \code{TRUE}, steps of the analysis are printed to the console.}
   \item{plot}{logical. If \code{TRUE}, a plot with the "best" distribution (in terms of lowest AIC) on top of the histogram or kernel density curve is displayed.}
   \item{...}{other parameters to be passed to \code{\link{density}} or \code{\link{histogram}} .}  
@@ -46,7 +46,7 @@ Fits the following 21 distributions using residual sum-of-squares as the minimiz
 20) Arcsine distribution (\code{propagate:::darcsin}) => \url{http://en.wikipedia.org/wiki/Arcsine_distribution}\cr 
 21) Von Mises distribution (\code{propagate:::dmises}) => \url{http://en.wikipedia.org/wiki/Von_Mises_distribution}\cr 
 
-Number 16) - 20) are sometimes hard to fit because the start parameters are not readily deducible from the kernel density estimates. For these three cases, a grid of starting values with different magnitudes is used to obtain the best parameter combination with respect to lowest residual sum-of-squares.
+Distributions 3) and 16) - 19) are sometimes hard to fit because the start parameters are not readily deducible from the kernel density estimates or some parameters are highly sensitive to shape changes. For these five cases, a grid of starting values with different magnitudes is used to obtain the best parameter combination with respect to lowest residual sum-of-squares ("brute force" approach).
 
 The goodness-of-fit (GOF) is calculated with \code{\link{AIC}} from the (weighted) log-likelihood of the fit:
 \deqn{\rm{ln}(L) = 0.5 \cdot \left(-N \cdot \left(\rm{ln}(2\pi) + 1 + \rm{ln}(N) - \sum_{i=1}^n log(w_i) + \rm{ln}\left(\sum_{i=1}^n w_i \cdot x_i^2\right) \right) \right) \; , \; AIC = 2k - 2\rm{ln}(L)}
@@ -55,10 +55,18 @@ with \eqn{x_i} = the residuals from the NLS fit, \eqn{N} = the length of the res
 In contrast to some other distribution fitting softwares (i.e. Easyfit, Mathwave) that use residual sum-of-squares/Anderson-Darling/Kolmogorov-Smirnov statistics as GOF measures, the application of AIC accounts for increasing number of parameters in the distribution fit and therefore compensates for overfitting. Hence, this approach is more similar to ModelRisk (Vose Software) and as employed in \code{fitdistr} of the 'MASS' package.
 Another application is to identify a possible distribution for the raw data prior to using Monte Carlo simulations from this distribution. However, a decent number of observations should be at hand in order to obtain a realistic estimate of the proper distribution. See 'Examples'.\cr
 The code for the density functions is in file "distr-densities.R".
+
+IMPORTANT: It can be feasible to set \code{weights = TRUE} in order to give more weight to bins with low counts. See 'Examples'.
 }
 
 \value{
-A list with item \code{aic} containing the ascendingly sorted AIC dataframe and \code{fit} containing the results from \code{\link{optim}} for each distribution model.
+A list with the following items:
+
+\code{aic}: the ascendingly sorted AIC dataframe.\cr
+\code{fit}: a list of the results from \code{\link{nls.lm}} for each distribution model.\cr
+\code{bestfit}: the best model in terms of lowest AIC.\cr
+\code{fitted}: the fitted values from the best model.\cr
+\code{residuals}: the residuals from the best model.\cr
 }
      
 \author{
@@ -115,11 +123,20 @@ fitDistr(RES3)$aic
 ## in trapezoidal output distribution.
 A <- runif(100000, 20, 25)
 B <- runif(100000, 3, 3.5)
-DAT <- cbind(A, B)
-EXPR <- expression(A + B)
-RES4 <- propagate(EXPR, data = DAT, type = "sim", 
+DF4 <- cbind(A, B)
+EXPR4 <- expression(A + B)
+RES4 <- propagate(EXPR4, data = DF4, type = "sim", 
                  use.cov = FALSE, do.sim = TRUE)
 fitDistr(RES4)$aic        
+
+## Fitting with 1/counts as weights.
+EXPR5 <- expression(x + 2 * y)
+x <- c(5, 0.05)
+y <- c(1, 0.05)
+DF5 <- cbind(x, y)
+RES5 <- propagate(expr = EXPR5, data = DF5, type = "stat", 
+                  do.sim = TRUE, verbose = TRUE, weights = TRUE)
+fitDistr(RES5)$aic
 }
 }   
 

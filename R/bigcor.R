@@ -46,10 +46,12 @@ bigcor <- function(
     RES <- FUN(x[, G1], x[, G2], ...)
     resMAT[G1, G2] <- RES
     resMAT[G2, G1] <- t(RES)   
+    
     if (verbose) {
       timeNOW <- proc.time() - timeINIT
       cat(timeNOW[3], "s\n")
     }
+    
     gc()
   } 
   
