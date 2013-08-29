@@ -10,7 +10,7 @@ These are random sample generators for 15 different continuous distributions whi
 \details{
 Random samples can be drawn from the following distributions:\cr
 1) Skewed-normal distribution: \code{propagate:::rsn(n, location = 0, scale = 1, shape = 0)}\cr
-2) Generalized normal distribution: \code{propagate:::rgnorm(n, location = 0, scale = 1, shape = 0)}\cr 
+2) Generalized normal distribution: \code{propagate:::rgnorm(n, alpha = 1, xi = 1, kappa = -0.1)}\cr 
 3) Scaled and shifted t-distribution: \code{propagate:::rst(n, mean = 0, sd = 1, df = 2)}\cr 
 4) Gumbel distribution: \code{propagate:::rgumbel(n, location = 0, scale = 1)}\cr
 5) Johnson SU distribution: \code{propagate:::rJSU(n, xi = 0, lambda = 1, gamma = 1, delta = 1)}\cr

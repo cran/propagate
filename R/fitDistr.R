@@ -115,7 +115,7 @@ plot = TRUE,  ...)
   ## define start parameter list
   parLIST <- list(norm = c(mean = MEAN, sd = SD), 
                   sn = c(location = MEAN, scale = SD, shape = 1),
-                  gnorm = c(location = MEAN, scale = SD, shape = 1), 
+                  gnorm = c(alpha = 1, xi = MEAN, kappa = -0.1), 
                   lnorm = c(meanlog = mean(log(X)), sdlog = sd(log(X))),
                   st = c(mean = MEAN, sd = SD, df = 10),
                   logis = c(location = MEAN, scale = SD), 
@@ -163,7 +163,7 @@ plot = TRUE,  ...)
       if (verbose) counter(j)
       PARS <- GRID[j, ]
       FIT <- try(optim(par = PARS, fn = optFun, densfun = funLIST[[i]], quantiles = DENS$x,
-                      density = DENS$y, method = "Nelder", control = list(maxit = 1000)), silent = TRUE)
+                       density = DENS$y, method = "Nelder", control = list(maxit = 1000)), silent = TRUE)
       if (inherits(FIT, "try-error")) rssVEC[j] <- NA else rssVEC[j] <- FIT$value     
     }
     

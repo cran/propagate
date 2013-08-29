@@ -13,10 +13,12 @@ rsn <- function(n, location = 0, scale = 1, shape = 0)
 
 ## random samples from the generalized normal distribution, taken from 
 ## inverseCDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
-rgnorm <- function(n, location = 0, scale = 1, shape = 0) 
+rgnorm <- function(n, alpha = 1, xi = 1, kappa = -0.1) 
 {
-  erf.inv <- function(x) qnorm((x + 1)/2)/sqrt(2)
-  res <- location + (scale * (1 - exp((sqrt(2) * shape * erf.inv(1 - 2 * runif(n))))))/shape
+  ## 'invcerf' taken from erf.R in package 'pracma'
+  invcerf <- function(x) -qnorm(x/2)/sqrt(2) 
+  
+  res <- xi + (alpha/kappa) * (1 - exp((sqrt(2) * kappa) * invcerf(2 * runif(n))))
   res
 }
 
@@ -118,31 +120,44 @@ rarcsin <- function(n, a = 2, b = 1)
 ## using "Rejection Sampling" and runif as the enveloping distribution
 rmises <- function(n, mu = 1, kappa = 3)  
 {
-  nSAMPLE <- 0 
+  OUT <- numeric(n)
+  LOWER <- mu - pi
+  UPPER <- mu + pi  
+  POS1 <- 1
+  nSAMPLE <- 0
   N <- n
-  OUT <- NULL
+  maxDUNIF <- 1/(UPPER - LOWER) 
   
   while(nSAMPLE < n) {
-    # (1) sample from rectangular distribution 
-    u <- runif(N)
-    # (2) Sample from enveloping rectangular distribution from mu - pi/mu + pi
-    x <- runif(N, mu - pi, mu + pi)
-    # (3) Accept candidate value, if probability u is smaller or equal than the density g(x)
-    # at x divided by the density of f(x) * A (scale) 
-    if (nSAMPLE == 0) {
-      maxDUNIF <- max(dunif(x, mu - pi, mu + pi), na.rm = TRUE)
-      maxDMISES <- max(dmises(x, mu = mu, kappa = kappa), na.rm = TRUE)
-      A <- 1.1 * maxDMISES/maxDUNIF      
-    }
-    VAL <- 1/A * dmises(x, mu = mu, kappa = kappa)/dunif(x, mu - pi, mu + pi)
-    ## increase OUT   
-    OUT <- c(OUT, x[u <= VAL])
-    ## calculate difference to 'n'
-    DIFF <- n - length(OUT)
-    ## end criterion for 'while'
-    nSAMPLE <- length(OUT)
-    ## if nSAMPLE < n, restart with twice the remaining values
-    N <- 2 * DIFF   
+    ## (1) sample from rectangular distribution 
+    u <- runif(N)   
+    
+    ## (2) Sample from enveloping rectangular distribution from mu - pi/mu + pi
+    x <- runif(N, LOWER, UPPER)  
+    
+    ## (3) calculate scaling factor
+    DMISES <- dmises(x, mu = mu, kappa = kappa)    
+    if (nSAMPLE == 0) {      
+      maxDMISES <- max(DMISES, na.rm = TRUE)
+      A <- 1.1 * maxDMISES/maxDUNIF       
+    }       
+        
+    ## (4) Accept candidate value, if probability u is smaller or equal than the density g(x)
+    ## at x divided by the density of f(x) * A (scale) 
+    VAL <- 1/A * DMISES/maxDUNIF    
+    SEL <- x[u <= VAL]
+    
+    ## (5) fill result vector and increase start position,
+    ## calculate ratio of true events
+    LEN <- length(SEL)
+    if (nSAMPLE == 0) RATIO <- N/LEN/10
+    nSAMPLE <- nSAMPLE + LEN
+    POS2 <- POS1 + LEN - 1
+    OUT[POS1:POS2] <- SEL
+    POS1 <- POS2 + 1    
+              
+    ## if n(events) < n, restart with ratio as factor
+    if (nSAMPLE < n) N <- RATIO * n    
   }  
   
   return(OUT[1:n])
@@ -150,33 +165,46 @@ rmises <- function(n, mu = 1, kappa = 3)
 
 ## random samples from the curvilinear trapezoidal distribution,  
 ## using "Rejection Sampling" and runif as the enveloping distribution
-rctrap <- function(n, a = 0, b = 1, d = 0.1)
+rctrap <- function(n, a = 0, b = 1, d = 0.1)  
 {
-  nSAMPLE <- 0 
+  OUT <- numeric(n)
+  LOWER <- a - 2 * d
+  UPPER <- b + 2 * d  
+  POS1 <- 1
+  nSAMPLE <- 0
   N <- n
-  OUT <- NULL
+  maxDUNIF <- 1/(UPPER - LOWER) 
   
   while(nSAMPLE < n) {
-    # (1) sample from rectangular distribution 
-    u <- runif(N)
-    # (2) Sample from enveloping rectangular distribution from min/max
-    x <- runif(N, a, b)
-    # (3) Accept candidate value, if probability u is smaller or equal than the density g(x)
-    # at x divided by the density of f(x) * A (scale) 
-    if (nSAMPLE == 0) {
-      maxDUNIF <- max(dunif(x, a, b), na.rm = TRUE)
-      maxDCTRAP <- max(dctrap(x, a = a, b = b, d = d), na.rm = TRUE)
-      A <- 1.1 * maxDCTRAP/maxDUNIF      
-    }
-    VAL <- 1/A * dctrap(x, a = a, b = b, d = d)/dunif(x, a, b)
-    ## increase OUT   
-    OUT <- c(OUT, x[u <= VAL])
-    ## calculate difference to 'n'
-    DIFF <- n - length(OUT)
-    ## end criterion for 'while'
-    nSAMPLE <- length(OUT)
-    ## if nSAMPLE < n, restart with twice the remaining values
-    N <- 2 * DIFF   
+    ## (1) sample from rectangular distribution 
+    u <- runif(N)   
+    
+    ## (2) Sample from enveloping rectangular distribution from mu - pi/mu + pi
+    x <- runif(N, LOWER, UPPER)  
+    
+    ## (3) calculate scaling factor
+    DCTRAP <- dctrap(x, a = a, b = b, d = d)    
+    if (nSAMPLE == 0) {      
+      maxDCTRAP <- max(DCTRAP, na.rm = TRUE)
+      A <- 1.1 * maxDCTRAP/maxDUNIF       
+    }       
+    
+    ## (4) Accept candidate value, if probability u is smaller or equal than the density g(x)
+    ## at x divided by the density of f(x) * A (scale) 
+    VAL <- 1/A * DCTRAP/maxDUNIF    
+    SEL <- x[u <= VAL]
+    
+    ## (5) fill result vector and increase start position,
+    ## calculate ratio of true events
+    LEN <- length(SEL)
+    if (nSAMPLE == 0) RATIO <- N/LEN/10
+    nSAMPLE <- nSAMPLE + LEN
+    POS2 <- POS1 + LEN - 1
+    OUT[POS1:POS2] <- SEL
+    POS1 <- POS2 + 1    
+    
+    ## if n(events) < n, restart with ratio as factor
+    if (nSAMPLE < n) N <- RATIO * n    
   }  
   
   return(OUT[1:n])
@@ -187,34 +215,46 @@ rctrap <- function(n, a = 0, b = 1, d = 0.1)
 rgtrap <- function(n, min = 0, mode1 = 1/3, mode2 = 2/3, max = 1, n1 = 2, 
                    n3 = 2, alpha = 1) 
 {
-  nSAMPLE <- 0 
+  OUT <- numeric(n)
+  LOWER <- min
+  UPPER <- max  
+  POS1 <- 1
+  nSAMPLE <- 0
   N <- n
-  OUT <- NULL
-  
+  maxDUNIF <- 1/(UPPER - LOWER) 
+    
   while(nSAMPLE < n) {
-    # (1) sample from rectangular distribution 
-    u <- runif(N)
-    # (2) Sample from enveloping rectangular distribution from min/max
-    x <- runif(N, min, max)
-    # (3) Accept candidate value, if probability u is smaller or equal than the density g(x)
-    # at x divided by the density of f(x) * A (scale) 
-    if (nSAMPLE == 0) {
-      maxDUNIF <- max(dunif(x, min, max), na.rm = TRUE)
-      maxDGTRAP <- max(dgtrap(x, min = min, mode1 = mode1, mode2 = mode2, max = max,
-                              n1 = n1, n3 = n3, alpha = alpha), na.rm = TRUE)
-      A <- 1.1 * maxDGTRAP/maxDUNIF      
-    }
-    VAL <- 1/A * dgtrap(x, min = min, mode1 = mode1, mode2 = mode2, max = max,
-                        n1 = n1, n3 = n3, alpha = alpha)/dunif(x, min, max)
-    ## increase OUT   
-    OUT <- c(OUT, x[u <= VAL])
-    ## calculate difference to 'n'
-    DIFF <- n - length(OUT)
-    ## end criterion for 'while'
-    nSAMPLE <- length(OUT)
-    ## if nSAMPLE < n, restart with twice the remaining values
-    N <- 2 * DIFF   
+    ## (1) sample from rectangular distribution 
+    u <- runif(N)   
+      
+    ## (2) Sample from enveloping rectangular distribution from mu - pi/mu + pi
+    x <- runif(N, LOWER, UPPER)  
+      
+    ## (3) calculate scaling factor
+    DGTRAP <- dgtrap(x, min = min, mode1 = mode1, mode2 = mode2, max = max, n1 = n1, 
+                         n3 = n3, alpha = 1, log = FALSE)    
+    if (nSAMPLE == 0) {      
+      maxDGTRAP <- max(DGTRAP, na.rm = TRUE)
+      A <- 1.1 * maxDGTRAP/maxDUNIF       
+    }       
+      
+    ## (4) Accept candidate value, if probability u is smaller or equal than the density g(x)
+    ## at x divided by the density of f(x) * A (scale) 
+    VAL <- 1/A * DGTRAP/maxDUNIF    
+    SEL <- x[u <= VAL]
+      
+    ## (5) fill result vector and increase start position,
+    ## calculate ratio of true events
+    LEN <- length(SEL)
+    if (nSAMPLE == 0) RATIO <- N/LEN/10
+    nSAMPLE <- nSAMPLE + LEN
+    POS2 <- POS1 + LEN - 1
+    OUT[POS1:POS2] <- SEL
+    POS1 <- POS2 + 1    
+      
+    ## if n(events) < n, restart with ratio as factor
+    if (nSAMPLE < n) N <- RATIO * n    
   }  
-  
+    
   return(OUT[1:n])
 }

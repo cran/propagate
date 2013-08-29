@@ -1,2 +1,8 @@
+propagate 1.0-2 (27-01-2014)
+* Modified 'rmises', 'rctrap' and 'rgtrap' so that a result vector is preallocated, which makes the three functions a bit faster, roughly 300000-400000 random numbers/second (3 GHz Pentium Dual Core). 
+* 'colVars' and 'rowVars' are now coded in C++ using the Rcpp framework. For a row-wise calculation of variances from a matrix of 500000 rows/10 columns this takes now only 100 ms! 
+* Added function 'bigcor' for creating VERY large correlation/covariance matrices, using a step-wise submatrix filling approach (Huh?). There is a corresponding blog entry to be found under http://rmazing.wordpress.com/2013/02/22/bigcor-large-correlation-matrices-in-r/.
+* Generalized normal distribution 'dgnorm' now has a different parametrization that tallies with 'rgnorm' (Bug kindly provided by Tony C).
+
 propagate 1.0-1 (29-08-2013)
 * First version and hence no update.

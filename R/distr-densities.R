@@ -7,48 +7,56 @@ dsn <- function (x, location = 0, scale = 1, shape = 0, log = FALSE)
   if (log) loglik else exp(loglik)  
 }
 
-## generalized normal distribution
-dgnorm <- function(x, location = 0, scale = 1, shape = 0) {
-  shape/(2 * scale * gamma(1/shape)) * exp(-(abs(x - location)/scale)^shape)
+## generalized normal distribution,
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
+dgnorm <- function(x, alpha = 1, xi = 1, kappa = -0.1) 
+{
+  1/(exp(log(1 - (kappa * (x - xi))/alpha)^2/(2 * kappa^2)) * (sqrt(2 * pi) * (alpha - x * kappa + kappa * xi))) 
 }
 
-## scaled and shifted t-distribution
+## scaled and shifted t-distribution,
 dst <- function (x, mean = 0, sd = 1, df = 2) 
 {
   dt((x - mean)/sd, df = df)/sd
 }
 
-## Gumbel distribution
+## Gumbel distribution,
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 dgumbel <- function(x, location = 0, scale = 1) {
   z <- (x - location)/scale
   (1/scale) * exp(-z - exp(-z))
 }
 
-## Johnson SU distribution
+## Johnson SU distribution,
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 dJSU <- function (x, xi = 0, lambda = 1, gamma = 1, delta = 1) 
 {
   z <- (x - xi)/lambda
   delta/(lambda * sqrt(2 * pi) * sqrt(z^2 + 1)) * exp(-0.5 * (gamma + delta * log(z + sqrt(z^2 + 1)))^2)
 }
 
-## Johnson SB distribution
+## Johnson SB distribution,
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 dJSB <- function (x, xi = 0, lambda = 1, gamma = 1, delta = 1) 
 {
   z <- (x - xi)/lambda
   delta/(lambda * sqrt(2 * pi) * z * (1 - z)) * exp(-0.5 * (gamma + delta * log(z/(1 - z)))^2)
 }
 
-## three-parameter weibull distribution with location gamma
+## three-parameter weibull distribution with location gamma,
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 dweibull2 <- function(x, location = 0, shape = 1, scale = 1) {
   (shape/scale) * ((x - location)/scale)^(shape - 1) * exp(-((x - location)/scale)^shape)  
 }
 
-## four-parameter beta distribution with boundary parameters
+## four-parameter beta distribution with boundary parameters,
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 dbeta2 <- function(x, alpha1 = 1, alpha2 = 1, a = 0, b = 0) {
   (1/beta(alpha1, alpha2)) * ((x - a)^(alpha1 - 1) * (b - x)^(alpha2 - 1))/(b - a)^(alpha1 + alpha2 - 1)
 }
 
-## triangular distribution 
+## triangular distribution,
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 dtriang <- function(x, a = 0, b = 1, c = 2) {
   y <- numeric(length(x))
   y[x < a] <- 0
@@ -58,7 +66,8 @@ dtriang <- function(x, a = 0, b = 1, c = 2) {
   return(y)
 }
 
-## trapezoidal distribution
+## trapezoidal distribution,
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 dtrap <- function(x, a = 0, b = 1, c = 2, d = 3) {
   y <- numeric(length(x))
   u <- 2/(d + c - b - a)
@@ -70,7 +79,8 @@ dtrap <- function(x, a = 0, b = 1, c = 2, d = 3) {
   return(y)
 }
 
-## curvilinear trapezoidal distribution
+## curvilinear trapezoidal distribution,
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 dctrap <- function(x, a = 0, b = 1, d = 0.1) {
   y <- numeric(length(x))
   mp <- (a + b)/2
@@ -83,7 +93,8 @@ dctrap <- function(x, a = 0, b = 1, d = 0.1) {
   return(y)
 }
 
-## Generalized Trapezoidal distribution
+## Generalized Trapezoidal distribution,
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 dgtrap <- function (x, min = 0, mode1 = 1, mode2 = 2, max = 3, n1 = 2, n3 = 2, alpha = 1, log = FALSE) 
 {
   y <- numeric(length(x))
@@ -103,12 +114,14 @@ dgtrap <- function (x, min = 0, mode1 = 1, mode2 = 2, max = 3, n1 = 2, n3 = 2, a
   return(y)
 }
 
-## Laplacian distribution
+## Laplacian distribution,
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 dlaplace <- function(x, mean = 0, sigma = 1) {
   1/(sqrt(2) * sigma) * exp(-(sqrt(2) * abs(x - mean))/sigma)
 }
 
-## Arcsine distribution
+## Arcsine distribution,
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 darcsin <- function(x, a = 0, b = 1) { 
   y <- numeric(length(x))  
   y[x <= a] <- 0
@@ -117,7 +130,8 @@ darcsin <- function(x, a = 0, b = 1) {
   return(y)
 }
 
-## von Mises distribution
+## von Mises distribution,
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 dmises <- function(x, mu = 0, kappa = 1) {  
   y <- numeric(length(x))  
   y[x < -pi + mu] <- 0

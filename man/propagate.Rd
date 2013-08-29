@@ -231,7 +231,7 @@ data(H.2)
 ## This gives exactly the means, uncertainties and
 ## correlations as given in Table H.2:
 colMeans(H.2)
-colSDs(H.2)/sqrt(5)
+sqrt(colVarsC(H.2))/sqrt(5)
 cor(H.2)
 
 ## H.2.3 Approach 1 using mean values and
@@ -240,7 +240,7 @@ EXPR6a <- expression((V/I) *  cos(phi)) ## R
 EXPR6b <- expression((V/I) *  sin(phi)) ## X
 EXPR6c <- expression(V/I) ## Z
 MEAN6 <- colMeans(H.2)
-SD6 <- colSDs(H.2)
+SD6 <- sqrt(colVarsC(H.2))
 DF6 <- rbind(MEAN6, SD6)
 COV6ab <- cov(H.2) ## covariance matrix of V, I, phi
 COV6c <- cov(H.2[, 1:2])  ## covariance matrix of V, I

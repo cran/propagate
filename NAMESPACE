@@ -10,18 +10,24 @@ statVec,
 skewness,
 kurtosis,
 fitDistr,
-colVars,
-rowVars,
-colSDs,
-rowSDs,
+colVarsC,
+rowVarsC,
 contribution,
 makeDat,
 numGrad,
 numHess,
 predictNLS,
-WelchSatter
+WelchSatter,
+bigcor
 )
+
+importFrom(ff, ff)
+importFrom(MASS, mvrnorm)
+importFrom(tmvtnorm, rtmvt)
+importFrom(Rcpp, sourceCpp)
 
 ## S3 methods
 S3method(print, propagate)
 S3method(plot, propagate)
+
+useDynLib(propagate)
