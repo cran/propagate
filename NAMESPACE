@@ -4,6 +4,8 @@ propagate,
 makeGrad,
 makeHess,
 evalDerivs,
+makeGrad,
+makeHess,
 mixCov,
 cor2cov,
 statVec,
@@ -18,17 +20,20 @@ numGrad,
 numHess,
 predictNLS,
 WelchSatter,
-bigcor
+bigcor,
+interval
 )
 
-importFrom(ff, ff)
-importFrom(MASS, mvrnorm)
-importFrom(tmvtnorm, rtmvt)
-importFrom(Rcpp, sourceCpp)
-importFrom(minpack.lm, nls.lm)
+importFrom("ff", ff)
+importFrom("MASS", mvrnorm)
+importFrom("tmvtnorm", rtmvt)
+importFrom("Rcpp", sourceCpp)
+importFrom("minpack.lm", nls.lm, nls.lm.control)
 
 ## S3 methods
 S3method(print, propagate)
 S3method(plot, propagate)
+S3method(summary, propagate)
+S3method(print, interval)
 
 useDynLib(propagate)

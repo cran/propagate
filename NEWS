@@ -1,3 +1,16 @@
+propagate 1.0-4 (25-09-2014)
+New functions:
+* added a summary function for propagate objects that includes skewness/kurtosis and Shapiro-Wilks/Kolmogorov-Smirnov tests for normality on the MC evaluations.
+* added 'interval' function for uncertainty propagation based on interval arithmetics. Avoids the so-called "dependency problem" by evaluating all combinations of a sequence grid.
+
+Changes and bug-fixes in functions:
+* "use.eval" has been removed from 'propagate' because switching between evaluation in an environment or row-wise is now done automatically.
+* "method" has been removed from 'propagate' because the function will now first try symbolic differentiation and automatically switch to numeric differentiaion if that fails.
+* 'propagate' can now handle functions in addition to expressions. This way, one can define functions for more complicated setups, such as recurrence relations. However, Taylor expansion is not applicable in these scenarios because no automatic differentiation is possible, so only Monte Carlo simulation will be conducted.
+* fixed a bug in 'predictNLS' which gave an error when the formula for 'nls' is defined outside of 'nls' and supplied as a variable to the function call (thanks to Bartosz Kostrzewa).
+* print.propagate is now less verbose, because summary.propagate has been added.
+* added an example in doc to 'propagate' from the Python library 'soerp' (https://pypi.python.org/pypi/soerp) for comparison purposes => exactly (to the fifth decimal) the same results. 
+
 propagate 1.0-3 (28-02-2014)
 * As the new parametrization of 'dgnorm' tended to give convergence problems (bug kindly provided by Tony C), it was included into those distributions that are initially fitted by a grid of possible starting parameters in 'fitDistr'. 
 * The 'optim' function of 'fitDistr' was replaced by 'nls.lm' of the "minpack" package because it is more robust in terms of minimizing residal sum-of-squares.

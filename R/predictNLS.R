@@ -9,7 +9,7 @@ alpha = 0.05,
   interval <- match.arg(interval)
   
   ## get right-hand side of formula
-  RHS <- as.list(model$call$formula)[[3]]
+  RHS <- as.list(eval(model$call$formula))[[3]]
   EXPR <- as.expression(RHS)
     
   ## all variables in model

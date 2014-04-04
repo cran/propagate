@@ -3,25 +3,35 @@ expr,
 data, 
 type = c("stat", "raw", "sim"), 
 second.order = TRUE,
-method = c("sym", "num"),
 do.sim = TRUE, 
 dist.sim = c("norm", "t"),
 df.t = NULL,
 use.cov = TRUE, 
 nsim = 100000,
-use.eval = TRUE,
 alpha = 0.05,
 ...
 )
 {            
+  options(warn = -1)
+  
   ## check for correct inputs
-  type <- match.arg(type)
-  method <- match.arg(method)
+  type <- match.arg(type)  
   dist.sim = match.arg(dist.sim)
+  
+  ## version 1.0-4: convert function to expression
+  if (is.function(expr)) {
+    ARGS <- as.list(args(expr))
+    ARGS <- ARGS[-length(ARGS)]
+    VARS <- names(ARGS)    
+    expr <- body(expr)
+    class(expr) <- "expression"
+    isFun <- TRUE
+  } else isFun <- FALSE
+  
   if (!is.expression(expr)) stop("'expr' must be an expression")
   if (nsim < 10000) stop("'nsim' should be >= 10000 !")
   
-  VARS <- all.vars(expr)
+  if (!isFun) VARS <- all.vars(expr)  
   m <- match(VARS, colnames(data))
   if (any(is.na(m))) stop("Variable names of input dataframe and expression do not match!")
   if (length(unique(m)) != length(m)) stop("Some variable names are repetitive!")
@@ -62,13 +72,14 @@ alpha = 0.05,
       SIGMA[lower.tri(SIGMA)] <- 0
     }
   }    
+   
   ## if 'stat', create covariance matrix with diagonal variances
   if (type == "stat") {    
     SIGMA <- diag(DATA[2, ]^2, nrow = length(VARS), ncol = length(VARS))    
     colnames(SIGMA) <- colnames(data)
     rownames(SIGMA) <- colnames(data)
   }  
-    
+  
   ## check for same names in 'data' and 'cov'
   if (is.matrix(use.cov)) {
     m <- match(colnames(use.cov), colnames(DATA))            
@@ -85,7 +96,7 @@ alpha = 0.05,
   m1 <- match(colnames(SIGMA), colnames(DATA))
   meanVAL <- meanVAL[m1]
   m2 <- match(colnames(SIGMA), VARS)    
-  
+
   ## Monte-Carlo simulation using multivariate normal or t-distributions
   ## or input is simulated data
   if (do.sim) {     
@@ -103,18 +114,17 @@ alpha = 0.05,
   ## user-supplied simulated data to be either evaluated 'vectorized'
   ## or 'row-wise'. The former is significantly faster.
   if(do.sim || isSim) {      
-    if (use.eval) resSIM <- try(eval(EXPR, as.data.frame(datSIM)), silent = TRUE)    
-    else resSIM <- apply(datSIM, 1, function(x) eval(EXPR, envir = as.list(x)))     
     
     ## use 'row-wise' method if 'vectorized' throws an error.
-    if (use.eval && inherits(resSIM, "try-error")) {
-      cat("Using vectorized 'use.eval = TRUE' gave an error. Switching to 'row-wise' evaluation...")
-      resSIM <- apply(datSIM, 1, function(x) eval(EXPR, envir = as.list(x)))
-    }   
-    
+    resSIM <- try(eval(EXPR, as.data.frame(datSIM)), silent = TRUE) 
+    if (inherits(resSIM, "try-error")) {
+      print("Using 'vectorized' evaluation gave an error. Switching to 'row-wise' evaluation...")
+      resSIM <- apply(datSIM, 1, function(x) eval(EXPR, envir = as.list(x)))     
+    }
+       
     ## alpha-based confidence interval of MC simulations
     confSIM <- quantile(resSIM, c(alpha/2, 1 - (alpha/2)), na.rm = TRUE)  
-      
+          
     ## warning in case of single evaluated result
     if(do.sim && length(unique(resSIM)) == 1) print("Monte Carlo simulation gave unique repetitive values! Are all derivatives constants?")   
     
@@ -122,53 +132,54 @@ alpha = 0.05,
   } else resSIM <- datSIM <- confSIM <- allSIM <- NA  
   
   ## error propagation with first/second-order Taylor expansion
-  ## first-order mean: eval(EXPR), first-order variance: G.S.t(G)  
+  ## first-order mean: eval(EXPR), first-order variance: G.S.t(G) 
+  ## version 1.0-4: continue with NA's when differentiation not possible
   MEAN1 <- try(eval(EXPR, envir = as.list(meanVAL)), silent = TRUE)
-  if (inherits(MEAN1, "try-error")) stop("There was an error in evaluating the first-order mean!")
-  if (method == "sym") {
-    GRAD <- try(makeGrad(EXPR, m2), silent = TRUE)  
-    if (inherits(GRAD, "try-error")) stop("There was an error in creating the symbolic gradient!")
-    evalGRAD <- try(sapply(GRAD, eval, envir = as.list(meanVAL)), silent = TRUE)
-    if (inherits(evalGRAD, "try-error")) stop("There was an error in evaluating the symbolic gradient!")
-  } else {
-    GRAD <- try(numGrad(EXPR, as.list(meanVAL)), silent = TRUE)  
-    if (inherits(GRAD, "try-error")) stop("There was an error in creating the numeric gradient!")
-    evalGRAD <- as.vector(GRAD)
-  }   
-  VAR1 <- t(evalGRAD) %*% SIGMA %*% matrix(evalGRAD)   
-  VAR1 <- as.numeric(VAR1) 
+  if (!is.numeric(MEAN1)) {
+    print("There was an error in calculating the first-order mean")
+    MEAN1 <- NA
+  }  
       
+  GRAD <- try(makeGrad(EXPR, m2), silent = TRUE)  
+  if (!inherits(GRAD, "try-error")) evalGRAD <- try(sapply(GRAD, eval, envir = as.list(meanVAL)), silent = TRUE)
+  else {
+    GRAD <- try(numGrad(EXPR, as.list(meanVAL)), silent = TRUE)  
+    evalGRAD <- try(as.vector(GRAD), silent = TRUE)
+  }  
+      
+  VAR1 <- try(t(evalGRAD) %*% SIGMA %*% matrix(evalGRAD), silent = TRUE)  
+  VAR1 <- try(as.numeric(VAR1), silent = TRUE)
+  if (is.na(VAR1)) print("There was an error in calculating the first-order variance")
+    
   ## second-order mean: firstMEAN + 0.5 * tr(H.S), 
   ## second-order variance: firstVAR + 0.5 * tr(H.S.H.S)
   if (second.order) {
-    if (method == "sym") {
-      HESS <- try(makeHess(EXPR, m2), silent = TRUE)
-      if (inherits(HESS, "try-error")) stop("There was an error in creating the symbolic Hessian!")
-      evalHESS <- try(sapply(HESS, eval, envir = as.list(meanVAL)), silent = TRUE)
-      if (inherits(evalHESS, "try-error")) stop("There was an error in evaluating the symbolic Hessian!")
-      evalHESS <- matrix(evalHESS, ncol = length(meanVAL), byrow = TRUE) 
-    } else {
-      HESS <- try(numHess(EXPR, as.list(meanVAL)), silent = TRUE)  
-      if (inherits(HESS, "try-error")) stop("There was an error in creating the numeric Hessian!")
-      evalHESS <- HESS
-    }  
-    valMEAN2 <- 0.5 * tr(evalHESS %*% SIGMA)
-    valVAR2 <- 0.5 * tr(evalHESS %*% SIGMA %*% evalHESS %*% SIGMA)
-    MEAN2 <- MEAN1 + valMEAN2
-    VAR2 <- VAR1 + valVAR2
-  } else {
-    MEAN2 <- NA
-    VAR2 <- NA
-    HESS <- NA
-    evalHESS <- NA
-  }
+    HESS <- try(makeHess(EXPR, m2), silent = TRUE)
+    if (!inherits(HESS, "try-error"))  evalHESS <- try(sapply(HESS, eval, envir = as.list(meanVAL)), silent = TRUE)
+    else HESS <- try(numHess(EXPR, as.list(meanVAL)), silent = TRUE)
+    evalHESS <- try(matrix(evalHESS, ncol = length(meanVAL), byrow = TRUE), silent = TRUE)  
+        
+    valMEAN2 <- try(0.5 * tr(evalHESS %*% SIGMA), silent = TRUE)
+    valVAR2 <- try(0.5 * tr(evalHESS %*% SIGMA %*% evalHESS %*% SIGMA), silent = TRUE)
+        
+    MEAN2 <- try(MEAN1 + valMEAN2, silent = TRUE)
+    if (inherits(MEAN2, "try-error")) {
+      print("There was an error in calculating the second-order mean")
+      MEAN2 <- NA
+    }
+        
+    VAR2 <- try(VAR1 + valVAR2, silent = TRUE)  
+    if (inherits(VAR2, "try-error")) {
+      print("There was an error in calculating the second-order variance")
+      VAR2 <- NA
+    }
+  } else MEAN2 <- VAR2 <- HESS <- evalHESS <- NA
   
   ## total mean and variance  
   if (second.order) totalVAR <- VAR2  else totalVAR <- VAR1
   if (second.order) totalMEAN <- MEAN2  else totalMEAN <- MEAN1
-      
   errorPROP <- sqrt(totalVAR)  
-    
+  
   ## confidence interval based on simulation since df.residual not available
   distPROP <- rnorm(nsim, totalMEAN, errorPROP)
   confPROP <- quantile(distPROP, c(alpha/2, 1 - (alpha/2)), na.rm = TRUE)    

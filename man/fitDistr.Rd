@@ -57,6 +57,8 @@ Another application is to identify a possible distribution for the raw data prio
 The code for the density functions is in file "distr-densities.R".
 
 IMPORTANT: It can be feasible to set \code{weights = TRUE} in order to give more weight to bins with low counts. See 'Examples'.
+
+ALSO: Distribution fitting is highly sensitive to the number of defined histogram bins, so it is advisable to change this parameter and inspect if the order of fitted distributions remains stable!
 }
 
 \value{

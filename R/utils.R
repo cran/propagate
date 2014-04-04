@@ -59,7 +59,6 @@ skewness <- function (x, na.rm = FALSE)
   else skewness(as.vector(x), na.rm = na.rm)
 }
 
-############## non-visible ####################
 counter <- function (i) 
 {
   if (i%%10 == 0) 
@@ -89,5 +88,10 @@ rescale <- function (x, tomin, tomax)
     warning("Only numeric objects can be rescaled")
     return(x)
   }
+}
+
+print.interval <- function(x, ...)
+{
+  cat("[", x[1], ", ", x[2], "]", sep = "")
 }
 

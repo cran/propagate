@@ -10,23 +10,20 @@ A general function for the calculation of uncertainty propagation by first-/seco
 
 \usage{
 propagate(expr, data, type = c("stat", "raw", "sim"), second.order = TRUE,
-          method = c("sym", "num"), do.sim = TRUE, dist.sim = c("norm", "t"), 
-          df.t = NULL, use.cov = TRUE, nsim = 100000, use.eval = TRUE,
-          alpha = 0.05, ...)  
+          do.sim = TRUE, dist.sim = c("norm", "t"), df.t = NULL, 
+          use.cov = TRUE, nsim = 100000, alpha = 0.05, ...)  
 }
 
 \arguments{
   \item{expr}{an expression, such as \code{expression(x/y)}.}
   \item{data}{a dataframe or matrix containing either a) the replicates in columns when using \code{type = "raw"}, b) the means in first and standard deviations in second rows when using \code{type = "stat"} or c) sampled data generated from any of \R's \code{\link{distributions}} or those implemented in this package (\code{\link{rDistr}}), if \code{type = "sim"}. Column names must match the variable names.}
   \item{type}{either \code{"stat"} if means and standard deviations are supplied, \code{"raw"} if raw replicates are given or \code{"sim"} in case of simulated data.}
-  \item{second.order}{logical. If \code{TRUE}, error propagation will be calculated with first- and second-order Taylor expansion. See 'Details'.}
-  \item{method}{first- and second-order partial derivatives are either calculated \code{"sym"}bollically or \code{"num"}erically.}
+  \item{second.order}{logical. If \code{TRUE}, error propagation will be calculated with first- and second-order Taylor expansion. See 'Details'.}  
   \item{do.sim}{logical. Should Monte Carlo simulation be applied?}
   \item{dist.sim}{\code{"norm"} will use a multivariate normal distribution for Monte Carlo simulation, \code{"t"} a multivariate t-distribution. See 'Details'.}
   \item{df.t}{degrees of freedom when using \code{dist.sim = "t"} and no raw observations are supplied (i.e. \code{type = "stat"} or \code{type = "sim"}). See 'Details'.}
   \item{use.cov}{logical or variance-covariance matrix with the same column descriptions as \code{data}. See 'Details'.}
   \item{nsim}{the number of Monte Carlo simulations to be performed, minimum is 10000.}  
-  \item{use.eval}{logical. If \code{TRUE}, the Monte Carlo simulation is evaluated in an environment ("vectorized"), otherwise evaluation takes place "row-wise" (using \code{\link{apply}}). See 'Details'.}
   \item{alpha}{the 1 - confidence level.}
   \item{...}{other parameters to be supplied to future methods.}
 }
@@ -55,10 +52,12 @@ The following transformations based on two variables \eqn{x_1, x_2} illustrate t
 \deqn{= \frac{1}{2!} \left( \left(\sum_{i=1}^2 \frac{\partial}{\partial x_i} \sigma_i \right)^2 \it f \right)^2}
 \cr
 with \eqn{\mathrm{E}(y)} = expectation of \eqn{y}, \eqn{\mathbf{\sigma_y^2}} = variance of \eqn{y}, \eqn{{\color{red} \nabla_x}} = the p x n gradient matrix with all partial first derivatives \eqn{{\color{red} \rm{j_i}}}, \eqn{\mathbf{C}_x} = the p x p covariance matrix, \eqn{{\color{blue}\mathbf{H}_{xx}}} the Hessian matrix with all partial second derivatives \eqn{{\color{blue} \rm{h_i}}}, \eqn{\sigma_i} = the uncertainties and \eqn{\rm{tr}(\cdot)} = the trace (sum of diagonal) of a matrix. Note that because the hessian matrices are symmetric matrices, \eqn{{\color{blue} \rm{h_2}} = {\color{blue} \rm{h_3}}}. For a detailed derivation, see 'References'.\cr
-The second-order Taylor expansion corrects for bias in nonlinear expressions as the first-order Taylor expansion assumes linearity around \eqn{\bar{x}_i}.\cr 
+The second-order Taylor expansion corrects for bias in nonlinear expressions as the first-order Taylor expansion assumes linearity around \eqn{\bar{x}_i}. There is also a Python library available for second-order error propagation ('soerp', \url{https://pypi.python.org/pypi/soerp}). The 'propagate' package gives \bold{exactly} the same results, see last example under "Examples".\cr
 Depending on the input expression, the error propagation may result in an error that is not normally distributed. The Monte Carlo simulation, starting with normal distributions of the variables, can clarify this. For instance, a high tendency from deviation of normality is encountered in formulas in which the error of the denominator is relatively large or in exponential models with a large error in the exponent.\cr 
-For setups in which there is no symbolic derivation possible (i.e. \code{e <- expression(abs(x))} => "Function 'abs' is not in the derivatives table") one can switch to numeric differentiation by \code{method = "num"}.\cr
-Setting \code{use.eval = TRUE} has significant speed enhancement in evaluating the Monte Carlo simulations (~ 10-fold),  much to the author's surprise!
+
+For setups in which there is no symbolic derivation possible (i.e. \code{e <- expression(abs(x))} => "Function 'abs' is not in the derivatives table") the function automatically switches from symbolic (using \code{\link{makeGrad}} or \code{\link{makeHess}}) to numeric (\code{\link{numGrad}} or \code{\link{numHess}}) differentiation.\cr
+
+The function will try to evaluate the expression in an environment using \code{\link{eval}} which results in a significant speed enhancement (~ 10-fold). If that fails, evaluation is done over the rows of the simulated data using \code{\link{apply}}.
 }
 
 \value{
@@ -174,6 +173,22 @@ RES2b <- propagate(expr = EXPR2, data = DF2, type = "raw",
                   do.sim = TRUE, verbose = TRUE, dist.sim = "t")
 RES2$sim
 RES2b$sim
+
+## Example using a recursive function:
+## no Taylor expansion possible, only Monte-Carlo.
+a <- c(5, 0.1)
+b <- c(100, 2)
+DAT <- cbind(a, b)
+
+f <- function(a, b) {
+  N <- 0
+  for (i in 1:100) {
+    N <- N + i * log(a) + b^(1/i)
+  }
+  return(N)
+}
+
+propagate(f, DAT, nsim = 100000)
 
 ################# GUM 2008 (1) ########################
 ## Example in Annex H.1 from the GUM 2008 manual
@@ -371,13 +386,28 @@ DF10 <- cbind(Ls, D, d1, d2, as, t0, Delta, da, dt, Lnom)
 RES10 <- propagate(expr = EXPR10, data = DF10, type = "sim",
                    use.cov = FALSE, verbose = TRUE, 
                    alpha = 0.01)
+RES10
 ## This gives the same results as in 9.5.4.2, Table 11.
 ## However: results are exacter than in the GUM 2008
 ## manual, especially when comparing sd(Monte Carlo)
-## = 34.49 and sd(second-order Taylor expansion) 
-## = 34.45, while GUM 2008 gives 32 and 36, respectively.
+## sd(second-order Taylor expansion)!
+## GUM 2008 gives 32 and 36, respectively.
 RES10$prop
 RES10$sim
+
+########## Comparison to Pythons 'soerp' ###################
+## Exactly the same results as under 
+## https://pypi.python.org/pypi/soerp ! 
+EXPR11 <- expression(C * sqrt((520 * H * P)/(M *(t + 460))))
+H <- c(64, 0.5)
+M <- c(16, 0.1)
+P <- c(361, 2)
+t <- c(165, 0.5)
+C <- c(38.4, 0)
+DAT11 <- makeDat(EXPR11)
+RES11 <- propagate(expr = EXPR11, data = DAT11, type = "stat", 
+                  do.sim = TRUE, verbose = TRUE) 
+RES11
 }   
 
 \keyword{array}
