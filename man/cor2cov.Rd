@@ -19,7 +19,7 @@ cor2cov(C, var)
 
 \details{
 Calculates the covariance matrix \eqn{\mathbf{\Sigma}} using a correlation matrix \eqn{\mathbf{C}} and outer products of the standard deviations \eqn{\sigma_n}:
-\deqn{\mathbf{\Sigma} = \mathbf{C} \cdot \sqrt{\sigma_n^2} \otimes \sqrt{\sigma_n^2}}
+\deqn{\mathbf{\Sigma} = \mathbf{C} \cdot \sigma_n \otimes \sigma_n}
 }
 
 \value{

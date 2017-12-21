@@ -1,5 +1,5 @@
-########### generating random deviates from distributions #############
-## random samples from the skew-normal distribution, taken from package 'VGAM'
+########### Generating random deviates from distributions #############
+## Random samples from the skew-normal distribution, taken from package 'VGAM'
 rsn <- function(n, location = 0, scale = 1, shape = 0) 
 {
   rho <- shape/sqrt(1 + shape^2)
@@ -11,7 +11,7 @@ rsn <- function(n, location = 0, scale = 1, shape = 0)
   res
 }
 
-## random samples from the generalized normal distribution, taken from 
+## Random samples from the generalized normal distribution, taken from 
 ## inverseCDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 rgnorm <- function(n, alpha = 1, xi = 1, kappa = -0.1) 
 {
@@ -22,14 +22,14 @@ rgnorm <- function(n, alpha = 1, xi = 1, kappa = -0.1)
   res
 }
 
-## random samples from the scales and shifted t-distribution, 
+## Random samples from the scales and shifted t-distribution, 
 ## taken from the 'metRology' package
 rst <- function(n, mean = 0, sd = 1, df = 2) 
 {
   mean + sd * rt(n, df = df)
 }
 
-## random samples from the Gumbel distribution, taken from 
+## Random samples from the Gumbel distribution, taken from 
 ## inverseCDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 rgumbel <- function(n, location = 0, scale = 1) 
 {
@@ -38,7 +38,7 @@ rgumbel <- function(n, location = 0, scale = 1)
   res
 }
 
-## random samples from the Johnson SU distribution, taken from 
+## Random samples from the Johnson SU distribution, taken from 
 ## inverseCDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 rJSU <- function(n, xi = 0, lambda = 1, gamma = 1, delta = 1) 
 {
@@ -47,7 +47,7 @@ rJSU <- function(n, xi = 0, lambda = 1, gamma = 1, delta = 1)
   res
 }
 
-## random samples from the Johnson SB distribution, taken from 
+## Random samples from the Johnson SB distribution, taken from 
 ## inverseCDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 rJSB <- function(n, xi = 0, lambda = 1, gamma = 1, delta = 1) 
 {
@@ -56,7 +56,7 @@ rJSB <- function(n, xi = 0, lambda = 1, gamma = 1, delta = 1)
   res
 }
 
-## random samples from the three-parameter weibull distribution, taken from 
+## Random samples from the three-parameter weibull distribution, taken from 
 ## inverseCDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 rweibull2 <- function(n, location = 0, shape = 1, scale = 1) 
 {
@@ -64,7 +64,7 @@ rweibull2 <- function(n, location = 0, shape = 1, scale = 1)
   res
 }
 
-## random samples from the four-parameter beta distribution, taken from 
+## Random samples from the four-parameter beta distribution, taken from 
 ## inverseCDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 rbeta2 <- function(n, alpha1 = 1, alpha2 = 1, a = 0, b = 0)  
 {
@@ -73,7 +73,7 @@ rbeta2 <- function(n, alpha1 = 1, alpha2 = 1, a = 0, b = 0)
   res
 }
 
-## random samples from the triangular distribution, taken from 
+## Random samples from the triangular distribution, taken from 
 ## inverseCDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 rtriang <- function(n, a = 0, b = 0.5, c = 1)  
 {
@@ -85,7 +85,7 @@ rtriang <- function(n, a = 0, b = 0.5, c = 1)
   res
 }
 
-## random samples from the trapezoidal distribution, taken from 
+## Random samples from the trapezoidal distribution, taken from 
 ## inverseCDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 rtrap <- function(n, a = 0, b = 1, c = 2, d = 3)  
 {
@@ -99,7 +99,7 @@ rtrap <- function(n, a = 0, b = 1, c = 2, d = 3)
   res
 }
 
-## random samples from the Laplacian distribution, taken from 
+## Random samples from the Laplacian distribution, taken from 
 ## inverseCDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 rlaplace <- function(n, mean = 0, sigma = 1)   
 {
@@ -108,7 +108,7 @@ rlaplace <- function(n, mean = 0, sigma = 1)
   res
 }
 
-## random samples from the Arcsine distribution, taken from 
+## Random samples from the Arcsine distribution, taken from 
 ## inverseCDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 rarcsin <- function(n, a = 2, b = 1)   
 {
@@ -116,7 +116,7 @@ rarcsin <- function(n, a = 2, b = 1)
   res 
 }
 
-## random samples from the von Mises distribution,  
+## Random samples from the von Mises distribution,  
 ## using "Rejection Sampling" and runif as the enveloping distribution
 rmises <- function(n, mu = 1, kappa = 3)  
 {
@@ -163,7 +163,7 @@ rmises <- function(n, mu = 1, kappa = 3)
   return(OUT[1:n])
 }
 
-## random samples from the curvilinear trapezoidal distribution,  
+## Random samples from the curvilinear trapezoidal distribution,  
 ## using "Rejection Sampling" and runif as the enveloping distribution
 rctrap <- function(n, a = 0, b = 1, d = 0.1)  
 {
@@ -210,7 +210,7 @@ rctrap <- function(n, a = 0, b = 1, d = 0.1)
   return(OUT[1:n])
 }
 
-## random samples from the generalized trapezoidal distribution,  
+## Random samples from the generalized trapezoidal distribution,  
 ## using "Rejection Sampling" and runif as the enveloping distribution
 rgtrap <- function(n, min = 0, mode1 = 1/3, mode2 = 2/3, max = 1, n1 = 2, 
                    n3 = 2, alpha = 1) 
@@ -257,4 +257,55 @@ rgtrap <- function(n, min = 0, mode1 = 1/3, mode2 = 2/3, max = 1, n1 = 2,
   }  
     
   return(OUT[1:n])
+}
+
+## Random samples from the Inverse Gaussian distribution, taken from 
+## package 'statmod'
+rinvgauss <- function(n, mean = 1, dispersion = 1) 
+{
+  mu <- rep_len(mean, n)
+  phi <- rep_len(dispersion, n)
+  r <- rep_len(0, n)
+  i <- (mu > 0 & phi > 0)
+  if (!all(i)) {
+    r[!i] <- NA
+    n <- sum(i)
+  }
+  phi[i] <- phi[i] * mu[i]
+  Y <- rchisq(n, df = 1)
+  X1 <- 1 + phi[i]/2 * (Y - sqrt(4 * Y/phi[i] + Y^2))
+  firstroot <- as.logical(rbinom(n, size = 1L, prob = 1/(1 + X1)))
+  r[i][firstroot] <- X1[firstroot]
+  r[i][!firstroot] <- 1/X1[!firstroot]
+  mu * r
+}
+
+## Random samples from the Generalized Extreme Value distribution, taken from 
+## package 'extRemes'
+rgevd <- function(n, loc = 0, scale = 1, shape = 0) 
+{
+  z <- rexp(n)
+  out <- numeric(n) + NA
+  loc <- rep(loc, n)
+  sc <- rep(scale, n)
+  sh <- rep(shape, n)
+  id <- sh == 0
+  if (any(id)) out[id] <- loc[id] - sc[id] * log(z[id])
+  if (any(!id)) out[!id] <- loc[!id] + sc[!id] * (z[!id]^(-sh[!id]) - 1)/sh[!id]
+  return(out)
+}
+
+## Random samples from the Inverse Gamma distribution, taken from 
+## package 'MCMCpack' 
+rinvgamma <- function(n, shape = 1, scale = 5) 
+{
+  return(1/rgamma(n = n, shape = shape, rate = scale))
+}
+
+## Random samples from the Rayleigh distribution, taken from 
+## inverseCDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
+rrayleigh <- function(n, mu = 1, sigma = 1) 
+{
+  RUNIF <- runif(n)
+  mu + sigma * sqrt(log(1/(1 - RUNIF)^2))
 }

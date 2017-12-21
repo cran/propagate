@@ -1,17 +1,16 @@
 fitDistr <- function(
 object, 
-type = c("hist", "dens"),
 nbin = 100,
 weights = NULL,
 verbose = TRUE, 
 plot = TRUE,  ...)
 {
-  options(warn = -1)
-  type <- match.arg(type)
+  op <- options(warn = -1)
+  on.exit(options(op))
   
   if (is.vector(object)) X <- object
   else if (class(object) == "propagate") X <- object$resSIM
-  else stop("object must be either a numeric vector of an object of class 'propagate'!")
+  else stop("fitDistr: object must be either a numeric vector of an object of class 'propagate'!")
   
   MEAN <- mean(X, na.rm = TRUE)
   VAR <- var(X, na.rm = TRUE)
@@ -19,27 +18,20 @@ plot = TRUE,  ...)
   MIN <- min(X, na.rm = TRUE)
   MAX <- max(X, na.rm = TRUE)
   
-  ## select either kernel density or histogram density
-  if (type == "dens") {
-    DENS <- density(X, ...)    
-    DENS$counts <- length(X)/sum(DENS$y)*DENS$y    
-  } 
+  ## version 1.0-5: get histogram density
+  DENS <- hist(X, freq = FALSE, breaks = nbin, plot = FALSE, ...)
+  DENS$x <- DENS$mids
+  DENS$y <- DENS$density    
   
-  if (type == "hist") {
-    DENS <- hist(X, freq = FALSE, breaks = nbin, plot = FALSE, ...)
-    DENS$x <- DENS$mids
-    DENS$y <- DENS$density    
-  } 
-    
   ## unweighted fitting or weighted fitting 
   if (is.null(weights)) wts <- rep(1, length(DENS$x)) 
-  if (isTRUE(weights) & type == "hist") {
+  if (isTRUE(weights)) {
     wts <- 1/DENS$counts
     wts[!is.finite(wts)] <- 1
   }
   if (is.numeric(weights)) {
-    if (length(weights) != length(DENS$x)) stop("'weights' must be a vector of length ", length(DENS$x), "!")
-    else wts <- weights
+    if (length(weights) != length(DENS$x)) stop("fitDistr: 'weights' must be a vector of length ", length(DENS$x), "!")
+    wts <- weights
   }
     
   ## optimization function, minimum residual sum-of-squares is criterion
@@ -50,11 +42,10 @@ plot = TRUE,  ...)
     ## get density values from density function
     EVAL <- try(do.call(densfun, START), silent = TRUE) 
     if (inherits(EVAL, "try-error")) return(NA) 
-    #if (!all(is.finite(EVAL))) return(NA) 
     EVAL[is.nan(EVAL)] <- 0
     
     ## residual sum-of-squares to density values of object
-    RSS <- wts * (density - EVAL)^2       
+    RSS <- sqrt(wts) * (density - EVAL)       
     if (eval) return(EVAL) else return(RSS)   
   }
   
@@ -84,16 +75,24 @@ plot = TRUE,  ...)
                  "Trapezoidal",
                  "Curvilinear Trapezoidal",
                  "Generalized Trapezoidal",
-                 "Gamma",                  
+                 "Gamma",  
+                 "Inverse Gamma",
                  "Cauchy", 
                  "Laplace",
                  "Gumbel", 
                  "Johnson SU",
                  "Johnson SB",
-                 "3P Weibull", 
+                 "3P Weibull",
+                 "2P Beta",
                  "4P Beta",
                  "Arcsine",
-                 "von Mises"                
+                 "von Mises",
+                 "Inverse Gaussian",
+                 "Generalized Extreme Value",
+                 "Rayleigh",
+                 "Chi-Square",
+                 "Exponential",
+                 "F-"
                  )
   
   ## define distribution functions
@@ -108,16 +107,24 @@ plot = TRUE,  ...)
                   dtrap,
                   dctrap, 
                   dgtrap,
-                  dgamma,                   
+                  dgamma,   
+                  dinvgamma,
                   dcauchy, 
                   dlaplace,
                   dgumbel, 
                   dJSU, 
                   dJSB,
                   dweibull2, 
+                  dbeta,
                   dbeta2,
                   darcsin,
-                  dmises                    
+                  dmises,
+                  dinvgauss,
+                  dgevd,
+                  drayleigh,
+                  dchisq,
+                  dexp,
+                  df
                   )
   
   ## define start parameter list
@@ -135,16 +142,24 @@ plot = TRUE,  ...)
                   gtrap = c(min = 1.01 * MIN, mode1 = MIN + 0.5 * (MEAN - MIN), 
                             mode2 = MEAN + 0.5 * (MAX - MEAN), max = 0.99 * MAX, 
                             n1 = 2, n3 = 2, alpha = 1), 
-                  gamma = c(shape = MEAN^2/VAR, rate = MEAN/VAR),                 
+                  gamma = c(shape = MEAN^2/VAR, rate = MEAN/VAR),   
+                  invgamma = c(shape = 1, scale = 10),
                   cauchy = c(location = MEAN, scale = SD), 
                   laplace = c(mean = MEAN, sigma = SD),                   
                   gumbel = c(location = MEAN - (sqrt(6) * SD/pi) * 0.5772, scale = sqrt(6) * SD/pi),
                   jsu = c(xi = MEAN, lambda = 1,  gamma = -MEAN, delta = 1),
                   jsb = c(xi = MIN, lambda = MAX - MIN,  gamma = 0, delta = 1),
                   weib = c(location = min(X, na.rm = TRUE), shape = 3, scale = 1),
-                  beta = c(alpha1 = 10, alpha2 = 10, a = 0.9 * MIN, b = 1.1 * MAX),
+                  beta = c(shape1 = 10, shape2 = 10),
+                  beta2 = c(alpha1 = 10, alpha2 = 10, a = 0.9 * MIN, b = 1.1 * MAX),
                   arcsin = c(a = MIN, b = MAX),
-                  mises = c(mu = MEAN, kappa = 3)
+                  mises = c(mu = MEAN, kappa = 3),
+                  invgauss = c(mean = MEAN, dispersion = 0.1),
+                  gevd = c(loc = MEAN, scale = SD, shape = 0),
+                  rayleigh = c(mu = MEAN, sigma = SD),
+                  chisq = c(df = 5),
+                  exp = c(rate = 1),
+                  fdist = c(df1 = 10, df2 = 10)
                   )
   
   ## preallocate fit list and AIC vector
@@ -153,7 +168,7 @@ plot = TRUE,  ...)
   
   ## fit all distributions and calculate AICS
   for (i in 1:length(distNAMES)) {
-    if (verbose) cat("Fitting ", distNAMES[i]," distribution..", sep = "")
+    if (verbose) message("Fitting ", distNAMES[i]," distribution..", sep = "")
     
     ## use gridded 'optFun' if complicated distribution
     if (distNAMES[i] %in% c("Johnson SU", "Johnson SB", "3P Weibull", "3P Beta",
@@ -187,11 +202,11 @@ plot = TRUE,  ...)
     ## calculate AIC values
     if (inherits(FIT, "try-error")) {
       FIT <- NA
-      if (verbose) cat("Error!\n")
+      if (verbose) message("fitDistr: error in calculating AIC.")
     } else {
       fitLIST[[i]] <- FIT
       AICS[i] <- tryCatch(fitAIC(FIT), error = function(e) NA)
-      if (verbose) cat("Done.\n")
+      if (verbose) message("Done.\n")
     }    
   } 
   
@@ -209,12 +224,9 @@ plot = TRUE,  ...)
   
   ## plot best fit
   if (plot) {     
-    if (type == "dens") plot(DENS, lwd = 5, cex.axis = 1.5, las = 0, cex.lab = 1.5, xlab = "Bin", col = "gray",
-                             main = paste(distNAMES[SEL], "distribution, AIC =", round(AICS[SEL], 3))) 
-    
-    if (type == "hist")  hist(X, freq = FALSE, breaks = nbin, cex.axis = 1.5, las = 0, 
-                              cex.lab = 1.5, xlab = "Bin", 
-                              main = paste(distNAMES[SEL], "distribution, AIC =", round(AICS[SEL], 3)))
+    hist(X, freq = FALSE, breaks = nbin, cex.axis = 1.5, las = 0, 
+                          cex.lab = 1.5, xlab = "Bin", 
+                          main = paste(distNAMES[SEL], "distribution, AIC =", round(AICS[SEL], 3)))
     lines(DENS$x, evalY, col = 2, lty = 2, lwd = 2)    
   }  
       

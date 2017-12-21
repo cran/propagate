@@ -74,7 +74,7 @@ tr <- function(mat) sum(diag(mat), na.rm = TRUE)
 rescale <- function (x, tomin, tomax) 
 {
   if (missing(x) | missing(tomin) | missing(tomax)) {
-    stop(paste("Usage: rescale(x, tomin, tomax)\n", "\twhere x is a numeric object and tomin and tomax\n is the range to rescale into", 
+    stop(paste("rescale: rescale(x, tomin, tomax)\n", "\twhere x is a numeric object and tomin and tomax\n is the range to rescale into", 
                sep = "", collapse = ""))
   }
   if (is.numeric(x) && is.numeric(tomin) && is.numeric(tomax)) {
@@ -85,7 +85,7 @@ rescale <- function (x, tomin, tomax)
     return(tomin + (x - xrange[1]) * mfac)
   }
   else {
-    warning("Only numeric objects can be rescaled")
+    warning("rescale: only numeric objects can be rescaled")
     return(x)
   }
 }

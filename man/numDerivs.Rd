@@ -27,7 +27,7 @@ Calculates first- and second-order numerical approximation using Richardson's \b
 
 \value{The numeric Gradient/Hessian matrices.}
 
-\note{The two functions are modified versions of the \code{genD} function in the 'numDeriv' package, but a bit more easy to handle because they use expressions and the function's \code{x} value must not be defined as splitted scalar values \code{x[1], x[2], ...} in the body of the function.}
+\note{The two functions are modified versions of the \code{genD} function in the 'numDeriv' package, but a bit more easy to handle because they use expressions and the function's \code{x} value must not be defined as splitted scalar values \code{x[1], x[2], ... x[n]} in the body of the function.}
 
 \author{
 Andrej-Nikolai Spiess

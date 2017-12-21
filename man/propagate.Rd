@@ -5,24 +5,21 @@
 \title{Propagation of uncertainty using higher-order Taylor expansion and Monte Carlo simulation}
 
 \description{
-A general function for the calculation of uncertainty propagation by first-/second-order Taylor expansion and Monte Carlo simulation including covariances. Input data can be any symbolic/numeric differentiable expression and data based on replicates, summaries (mean & s.d.) or sampled from a distribution. Uncertainty propagation is based completely on matrix calculus accounting for full covariance structure. Monte Carlo simulation is conducted using multivariate normal or t-distributions with covariance structure.
+A general function for the calculation of uncertainty propagation by first-/second-order Taylor expansion and Monte Carlo simulation including covariances. Input data can be any symbolic/numeric differentiable expression and data based on summaries (mean & s.d.) or sampled from distributions. Uncertainty propagation is based completely on matrix calculus accounting for full covariance structure. Monte Carlo simulation is conducted using a multivariate t-distribution with covariance structure. Propagation confidence intervals are calculated from the expanded uncertainties by means of the degrees of freedom obtained from \code{\link{WelchSatter}}, or from the [\eqn{\frac{\alpha}{2}, 1-\frac{\alpha}{2}}] quantiles of the MC evaluations.
 }
 
 \usage{
-propagate(expr, data, type = c("stat", "raw", "sim"), second.order = TRUE,
-          do.sim = TRUE, dist.sim = c("norm", "t"), df.t = NULL, 
-          use.cov = TRUE, nsim = 100000, alpha = 0.05, ...)  
+propagate(expr, data, second.order = TRUE, do.sim = TRUE, cov = TRUE, 
+          df = NULL, nsim = 100000, alpha = 0.05, ...)  
 }
 
 \arguments{
   \item{expr}{an expression, such as \code{expression(x/y)}.}
-  \item{data}{a dataframe or matrix containing either a) the replicates in columns when using \code{type = "raw"}, b) the means in first and standard deviations in second rows when using \code{type = "stat"} or c) sampled data generated from any of \R's \code{\link{distributions}} or those implemented in this package (\code{\link{rDistr}}), if \code{type = "sim"}. Column names must match the variable names.}
-  \item{type}{either \code{"stat"} if means and standard deviations are supplied, \code{"raw"} if raw replicates are given or \code{"sim"} in case of simulated data.}
+  \item{data}{a dataframe or matrix containing either a) the means \eqn{\mu_i}, standard deviations \eqn{\sigma_i} and degrees of freedom \eqn{\nu_i} (optionally) in the first, second and third (optionally) row, or b) sampled data generated from any of \R's \code{\link{distributions}} or those implemented in this package (\code{\link{rDistr}}). If \code{nrow(data)} > 3, sampled data is assumed. The column names must match the variable names.}
   \item{second.order}{logical. If \code{TRUE}, error propagation will be calculated with first- and second-order Taylor expansion. See 'Details'.}  
   \item{do.sim}{logical. Should Monte Carlo simulation be applied?}
-  \item{dist.sim}{\code{"norm"} will use a multivariate normal distribution for Monte Carlo simulation, \code{"t"} a multivariate t-distribution. See 'Details'.}
-  \item{df.t}{degrees of freedom when using \code{dist.sim = "t"} and no raw observations are supplied (i.e. \code{type = "stat"} or \code{type = "sim"}). See 'Details'.}
-  \item{use.cov}{logical or variance-covariance matrix with the same column descriptions as \code{data}. See 'Details'.}
+  \item{cov}{logical or variance-covariance matrix with the same column names as \code{data}. See 'Details'.}
+  \item{df}{an optional scalar with the total degrees of freedom \eqn{\nu_{\mathrm{tot}}} of the system.}
   \item{nsim}{the number of Monte Carlo simulations to be performed, minimum is 10000.}  
   \item{alpha}{the 1 - confidence level.}
   \item{...}{other parameters to be supplied to future methods.}
@@ -31,7 +28,7 @@ propagate(expr, data, type = c("stat", "raw", "sim"), second.order = TRUE,
 \details{
 The implemented methods are:\cr\cr
 1) \bold{Monte Carlo simulation:}\cr
-For each variable \eqn{\boldsymbol{m}} in \code{data}, simulated data \eqn{\boldsymbol{x = [X_1, X_2, \ldots, X_n]}} with \eqn{\boldsymbol{n}} = \code{nsim} samples is generated from a multivariate normal distribution \eqn{\boldsymbol{x_{m, n} \sim \mathcal{N}(\mu, \Sigma)}} or multivariate t-distribution \eqn{\boldsymbol{x_{m, n} \sim t(\mu, \Sigma, \nu)}} using means \eqn{\boldsymbol{\mu_m}} and covariance matrix \eqn{\boldsymbol{\Sigma}} constructed from the standard deviations \eqn{\boldsymbol{\sigma_m}} of each variable. All data is coerced into a new dataframe that has the same covariance structure as the initial \code{data}: \eqn{\boldsymbol{\Sigma(\mathtt{data}) = \Sigma(x_{m, n})}}. Each row \eqn{\boldsymbol{i = 1, \ldots, n}} of the simulated dataset \eqn{\boldsymbol{x_{m, n}}} is evaluated with \code{expr}, \eqn{\boldsymbol{y_i = f(x_{m, i})}}, and summary statistics (mean, sd, median, mad, confidence interval based on \code{alpha}) are calculated on \eqn{\boldsymbol{y}}. If sample sizes for raw replicated data when setting \code{type = "raw"} are small, simulation from a multivariate t-distribution is advocated (Possolo, 2010). If this is done, the resulting distribution can have very heavy tails resulting in less stringent estimates of  \eqn{\boldsymbol{\sigma_y}} and larger confidence intervals. In this case, the degrees of freedom used are \eqn{n-1}. However, when setting \code{type = "stat"} or \code{type = "sim"}, the degrees of freedom have to be supplied by the user in \code{df.t}.
+For each variable \eqn{\boldsymbol{m}} in \code{data}, simulated data \eqn{\boldsymbol{x = [X_1, X_2, \ldots, X_n]}} with \eqn{\boldsymbol{n}} = \code{nsim} samples is generated from a multivariate t-distribution \eqn{\boldsymbol{x_{m, n} \sim t(\mu, \Sigma, \nu)}} using means \eqn{\boldsymbol{\mu_i}} and covariance matrix \eqn{\boldsymbol{\Sigma}} constructed from the standard deviations \eqn{\boldsymbol{\sigma_i}} of each variable. All data is coerced into a new dataframe that has the same covariance structure as the initial \code{data}: \eqn{\boldsymbol{\Sigma(\mathtt{data}) = \Sigma(x_{m, n})}}. Each row \eqn{\boldsymbol{i = 1, \ldots, n}} of the simulated dataset \eqn{\boldsymbol{x_{m, n}}} is evaluated with \code{expr}, \eqn{\boldsymbol{y_i = f(x_{m, i})}}, and summary statistics (mean, sd, median, mad, quantile-based confidence interval based on [\eqn{\frac{\alpha}{2}, 1-\frac{\alpha}{2}}]) are calculated on \eqn{\boldsymbol{y}}. 
 
 2) \bold{Error propagation:}\cr
 The propagated error is calculated by first-/second-order Taylor expansion accounting for full covariance structure using matrix algebra.\cr
@@ -51,27 +48,39 @@ The following transformations based on two variables \eqn{x_1, x_2} illustrate t
 \deqn{+ \rm{2h_2h_4}\sigma_1\sigma_2^3 + \rm{2h_3h_4}\sigma_1\sigma_2^3 + \rm{h_4}^2\sigma_2^4 = \frac{1}{2} (\rm{h_1}\sigma_1^2 + \rm{h_2}\sigma_1\sigma_2 + \rm{h_3}\sigma_1\sigma_2 + \rm{h_4}\sigma_2^2)^2}
 \deqn{= \frac{1}{2!} \left( \left(\sum_{i=1}^2 \frac{\partial}{\partial x_i} \sigma_i \right)^2 \it f \right)^2}
 \cr
-with \eqn{\mathrm{E}(y)} = expectation of \eqn{y}, \eqn{\mathbf{\sigma_y^2}} = variance of \eqn{y}, \eqn{{\color{red} \nabla_x}} = the p x n gradient matrix with all partial first derivatives \eqn{{\color{red} \rm{j_i}}}, \eqn{\mathbf{C}_x} = the p x p covariance matrix, \eqn{{\color{blue}\mathbf{H}_{xx}}} the Hessian matrix with all partial second derivatives \eqn{{\color{blue} \rm{h_i}}}, \eqn{\sigma_i} = the uncertainties and \eqn{\rm{tr}(\cdot)} = the trace (sum of diagonal) of a matrix. Note that because the hessian matrices are symmetric matrices, \eqn{{\color{blue} \rm{h_2}} = {\color{blue} \rm{h_3}}}. For a detailed derivation, see 'References'.\cr
+with \eqn{\mathrm{E}(y)} = expectation of \eqn{y}, \eqn{\mathbf{\sigma_y^2}} = variance of \eqn{y}, \eqn{{\color{red} \nabla_x}} = the p x n gradient matrix with all partial first derivatives \eqn{{\color{red} \rm{j_i}}}, \eqn{\mathbf{C}_x} = the p x p covariance matrix, \eqn{{\color{blue}\mathbf{H}_{xx}}} the Hessian matrix with all partial second derivatives \eqn{{\color{blue} \rm{h_i}}}, \eqn{\sigma_i} = the uncertainties and \eqn{\rm{tr}(\cdot)} = the trace (sum of diagonal) of a matrix. Note that because the Hessian matrices are symmetric, \eqn{{\color{blue} \rm{h_2}} = {\color{blue} \rm{h_3}}}. For a detailed derivation, see 'References'.\cr
 The second-order Taylor expansion corrects for bias in nonlinear expressions as the first-order Taylor expansion assumes linearity around \eqn{\bar{x}_i}. There is also a Python library available for second-order error propagation ('soerp', \url{https://pypi.python.org/pypi/soerp}). The 'propagate' package gives \bold{exactly} the same results, see last example under "Examples".\cr
-Depending on the input expression, the error propagation may result in an error that is not normally distributed. The Monte Carlo simulation, starting with normal distributions of the variables, can clarify this. For instance, a high tendency from deviation of normality is encountered in formulas in which the error of the denominator is relatively large or in exponential models with a large error in the exponent.\cr 
+Depending on the input expression, the error propagation may result in an error that is not normally distributed. The Monte Carlo simulation, starting with a symmetric t-distributions of the variables, can clarify this. For instance, a high tendency from deviation of normality is encountered in formulas in which the error of the denominator is relatively large or in exponential models with a large error in the exponent.\cr 
 
 For setups in which there is no symbolic derivation possible (i.e. \code{e <- expression(abs(x))} => "Function 'abs' is not in the derivatives table") the function automatically switches from symbolic (using \code{\link{makeGrad}} or \code{\link{makeHess}}) to numeric (\code{\link{numGrad}} or \code{\link{numHess}}) differentiation.\cr
 
 The function will try to evaluate the expression in an environment using \code{\link{eval}} which results in a significant speed enhancement (~ 10-fold). If that fails, evaluation is done over the rows of the simulated data using \code{\link{apply}}.
+
+\code{cov} is used in the following ways:\cr
+1) If \eqn{\mu_i, \sigma_i} are supplied, a covariance matrix is built with diagonals \eqn{\sigma_i^2}, independent of \code{cov = TRUE, FALSE}.\cr
+2) When simulated data is supplied, a covariance matrix is constructed that either has (\code{cov = TRUE}) or has not (\code{cov = FALSE}) off-diagonal covariances.\cr
+3) The user can supply an own covariance matrix \eqn{\Sigma}, with the same column/row names as in \code{data}.
+
+The expanded uncertainty used for constructing the confidence interval is calculated from the Welch-Satterthwaite degrees of freedom \eqn{\nu_{\mathrm{exp}}} of the \code{\link{WelchSatter}} function.
 }
 
 \value{
 A list with the following components:   
+\item{gradient}{the symbolic gradient vector \eqn{\nabla_x} of partial first-order derivatives.}
+\item{evalGrad}{the evaluated gradient vector \eqn{\nabla_x} of partial first-order derivatives, also known as the "sensitivity". See \code{\link{summary.propagate}}.}
+\item{hessian}{the symbolic Hessian matrix \eqn{\mathbf{H}_{xx}} of partial second-order derivatives.}
+\item{evalHess}{the evaluated Hessian matrix \eqn{\mathbf{H}_{xx}} of partial second-order derivatives.}
+\item{rel.contr}{the relative contribution matrix, see \code{\link{summary.propagate}}.}
+\item{covMat}{the covariance matrix \eqn{\mathbf{\Sigma}} used for Monte Carlo simulation and error propagation.} 
+\item{ws.df}{the Welch-Satterthwaite degrees of freedom \eqn{\nu_{\mathrm{ws}}}, as obtained from \code{\link{WelchSatter}}.}
+\item{k}{the coverage factor \eqn{k}, as calculated by \eqn{t(1-(\alpha/2), \nu_{\mathrm{ws}})}.}
+\item{u.exp}{the expanded uncertainty, \eqn{k\sigma(y)}, where \eqn{\sigma(y)} is derived either from the second-order uncertainty, if successfully calculated, or first-order otherwise.}
+\item{resSIM}{a vector containing the \code{nsim} values obtained from the row-wise expression evaluations \eqn{\boldsymbol{f(x_{m, i})}} of the simulated data in \code{datSIM}.}
 \item{datSIM}{a vector containing the \code{nsim} simulated multivariate values for each variable in column format.}  
-\item{resSIM}{a vector containing the \code{nsim} values obtained from the row-wise expression evaluations \eqn{\boldsymbol{ f(x_{m, i})}} of the simulated data in \code{datSIM}.}  
-\item{datPROP}{\code{nsim} values generated from a normal distribution with \eqn{\mu} and \eqn{\sigma} as calculated from the propagated error.}   
-\item{gradient}{the symbolic gradient vector \eqn{\nabla_x} of partial first-order derivatives.} 
-\item{evalGrad}{the evaluated gradient vector \eqn{\nabla_x} of partial first-order derivatives.}
-\item{covMat}{the covariance matrix \eqn{\mathbf{C}_x} used for Monte Carlo simulation and error propagation.} 
-\item{hessian}{the symbolic hessian matrix \eqn{\mathbf{H}_{xx}} of partial second-order derivatives.}
-\item{evalHess}{the evaluated hessian matrix \eqn{\mathbf{H}_{xx}} of partial second-order derivatives.}
-\item{prop}{a summary vector containing first-/second-order expectations and uncertainties as well as the confidence interval based on \code{alpha} from \code{datPROP}.} 
-\item{sim}{a summary vector containing the mean, standard deviation, median, MAD as well as the confidence interval based on \code{alpha} from \code{datSIM}.} 
+\item{prop}{a summary vector containing first-/second-order expectations and uncertainties as well as the confidence interval based on \code{alpha}.} 
+\item{sim}{a summary vector containing the mean, standard deviation, median, MAD as well as the confidence interval based on \code{alpha}.}
+\item{expr}{the original expression \code{expr}.}
+\item{data}{the original data \code{data}.}
 }
 
 \author{
@@ -146,33 +155,29 @@ Royston P.\cr
 }
 
 \examples{
-## From summary data: 
+## Example without given degrees-of-freedom.
 EXPR1 <- expression(x/y)
 x <- c(5, 0.01)
 y <- c(1, 0.01)
 DF1 <- cbind(x, y)
 RES1 <- propagate(expr = EXPR1, data = DF1, type = "stat", 
                   do.sim = TRUE, verbose = TRUE)
-RES1$prop
-RES1$sim
+RES1
 
-## From raw data:
+## Same example with given degrees-of-freedom
+## => third row in input 'data'.
 EXPR2 <- expression(x/y)
-x <- c(2, 2.1, 2.2, 2, 2.3, 2.1)
-y <- c(4, 4, 3.8, 4.1, 3.1, NA)
-DF2 <- cbind(x, y)  
-RES2 <- propagate(expr = EXPR2, data = DF2, type = "raw",  
+x <- c(5, 0.01, 12)
+y <- c(1, 0.01, 5)
+DF2 <- cbind(x, y)
+RES2 <- propagate(expr = EXPR2, data = DF2, type = "stat", 
                   do.sim = TRUE, verbose = TRUE)
-RES2$prop
-RES2$sim
+RES2
 
-## Compare to using a multivariate t-distribution
-## because of low sample size => larger confidence
-## intervals.
-RES2b <- propagate(expr = EXPR2, data = DF2, type = "raw",  
-                  do.sim = TRUE, verbose = TRUE, dist.sim = "t")
-RES2$sim
-RES2b$sim
+## With the 'summary' function, we can get the
+## Welch-Satterthwaite DF's, coverage, expanded uncertainty,
+## Gradient, Hessien etc.
+summary(RES2)
 
 ## Example using a recursive function:
 ## no Taylor expansion possible, only Monte-Carlo.
@@ -190,11 +195,13 @@ f <- function(a, b) {
 
 propagate(f, DAT, nsim = 100000)
 
+\dontrun{
 ################# GUM 2008 (1) ########################
 ## Example in Annex H.1 from the GUM 2008 manual
 ## (see 'References'), an end gauge calibration
-## study. At first, we will only use the first-order 
-## Taylor expansion.
+## study. We use only first-order error propagation,
+## with total df = 16 and alpha = 0.01, 
+## as detailed in GUM H.1.6.
 EXPR3 <- expression(ls + d - ls * (da * the + as * dt))
 ls <- c(50000623, 25)
 d <- c(215, 9.7)
@@ -203,39 +210,34 @@ the <- c(-0.1, 0.41)
 as <- c(11.5E-6, 1.2E-6)
 dt <- c(0, 0.029)
 DF3 <- cbind(ls, d, da, the, as, dt)
-RES3 <- propagate(expr = EXPR3, data = DF3, type = "stat", 
-                  do.sim = TRUE, verbose = TRUE, 
-                  second.order = FALSE)
-RES3$prop
-RES3$sim
+RES3 <- propagate(expr = EXPR3, data = DF3, second.order = FALSE,
+                  df = 16, alpha = 0.01)
+RES3
 ## propagate: sd.1 = 31.71 
 ## GUM H.1.4/H.6c: u = 32  
 
+## Expanded uncertainty, from summary function.
+summary(RES3)
+## propagate: 92.62
+## GUM H.1.6: 93
+
 ## Proof that covariance of Monte-Carlo
-## simulated dataset is the same as from 
-## initial data.
+## simulated dataset is "fairly"" the same 
+## as from initial data.
 RES3$covMat
 cov(RES3$datSIM)
 all.equal(RES3$covMat, cov(RES3$datSIM))
 
-## Expanded uncertainty GUM H.1.6
-## with 16 degrees of freedom.
-qt(0.005, 16, lower.tail = FALSE) * 31.71
-## propagate: 92.62
-## GUM H.1.6: 93  
-
-## Second-order terms GUM H.1.7.
-RES4 <- propagate(expr = EXPR3, data = DF3, type = "stat", 
-                  do.sim = TRUE, verbose = TRUE, 
-                  second.order = TRUE)
-RES4$prop
-RES4$sim
+## Now using second-order Taylor expansion.
+RES4 <- propagate(expr = EXPR3, data = DF3)
+RES4
 ## propagate: sd.2 = 33.91115
 ## GUM H.1.7: u = 34.
 ## Also similar to the non-matrix-based approach
 ## in Wang et al. (2005, page 408): u1 = 33.91115.
-## NOTE: After second-order correction, uncertainty is more
-## similar to the value obtained from Monte Carlo simulation!
+## NOTE: After second-order correction ("sd.2"), 
+## uncertainty is more similar to the uncertainty
+## obtained from Monte Carlo simulation!
 
 #################### GUM 2008 (2) #################
 ## Example in Annex H.2 from the GUM 2008 manual
@@ -260,45 +262,16 @@ DF6 <- rbind(MEAN6, SD6)
 COV6ab <- cov(H.2) ## covariance matrix of V, I, phi
 COV6c <- cov(H.2[, 1:2])  ## covariance matrix of V, I
 
-RES6a <- propagate(expr = EXPR6a, data = DF6, type = "stat", 
-                  do.sim = TRUE, verbose = TRUE, use.cov = COV6ab,
-                  second.order = TRUE)
-
-RES6b <- propagate(expr = EXPR6b, data = DF6, type = "stat", 
-                  do.sim = TRUE, verbose = TRUE, use.cov = COV6ab,
-                  second.order = TRUE)
-                  
-RES6c <- propagate(expr = EXPR6c, data = DF6[, 1:2], type = "stat", 
-                  do.sim = TRUE, verbose = TRUE, use.cov = COV6c,
-                  second.order = TRUE)
+RES6a <- propagate(expr = EXPR6a, data = DF6, cov = COV6ab)
+RES6b <- propagate(expr = EXPR6b, data = DF6, cov = COV6ab)
+RES6c <- propagate(expr = EXPR6c, data = DF6[, 1:2], 
+                   cov = COV6c)
 
 ## This gives exactly the same values of mean and sd/sqrt(5)
 ## as given in Table H.4.
 RES6a$prop
 RES6b$prop
 RES6c$prop
-
-#################### GUM 2008 (3) #######################
-## Example in Annex H.3 from the GUM 2008 manual
-## (see 'References'), calibration of a thermometer.
-## For this example, we can use the predict.lm function
-## of R directly to return the error of predicted values.
-data(H.3)
-LM <- lm(bk ~ I(tk - 20), data = H.3)
-## This will give exactly the same values as in H.3.3.
-summary(LM)
-
-## This will give exactly the same values as the
-## fourth column ("Predicted correction") of Table H.6.
-predict(LM)
-
-## This will give exactly the same values as the
-## fifth column ("Difference...") of Table H.6.
-H.3$bk - predict(LM)
-
-## Uncertainty in a predicted value. This will give
-## exactly the values in H.3.4.
-predict(LM, newdata = data.frame(tk = 30), se.fit = TRUE)
 
 ######### GUM 2008 Supplement 1 (1) #######################
 ## Example from 9.2.2 of the GUM 2008 Supplement 1
@@ -310,12 +283,10 @@ X2 <- c(0, 1)
 X3 <- c(0, 1)
 X4 <- c(0, 1)
 DF7 <- cbind(X1, X2, X3, X4)
-RES7 <- propagate(expr = EXPR7, data = DF7, type = "stat", 
-                  do.sim = TRUE, verbose = TRUE, nsim = 1E5)
+RES7 <- propagate(expr = EXPR7, data = DF7, nsim = 1E5)
 ## This will give exactly the same results as in 
 ## 9.2.2.6, Table 2.
-RES7$prop
-RES7$sim
+RES7
 
 ######### GUM 2008 Supplement 1 (2) #######################
 ## Example from 9.3 of the GUM 2008 Supplement 1
@@ -330,12 +301,11 @@ Pr <- runif(1E5, 7950, 8050) ## E(Pr) = 8000, (b-a)/2 = 50
 Pa0 <- 1.2 
 Mnom <- 100000
 DF8 <- cbind(Mrc, dMrc, Pa, Pw, Pr, Pa0, Mnom)
-RES8 <- propagate(expr = EXPR8, data = DF8, type = "sim",
-                  do.sim = TRUE, verbose = TRUE, nsim = 1E5)
+RES8 <- propagate(expr = EXPR8, data = DF8, nsim = 1E5)
 ## This will give exactly the same results as in 
 ## 9.3.2.3, Table 6
-RES8$prop
-RES8$sim
+RES8
+RES8
  
 ######### GUM 2008 Supplement 1 (3) #######################
 ## Example from 9.4 of the GUM 2008 Supplement 1
@@ -346,12 +316,10 @@ EXPR9 <- expression(X1^2 - X2^2)
 X1 <- c(0.050, 0.005)
 X2 <- c(0, 0.005)
 DF9 <- cbind(X1, X2)
-RES9a <- propagate(expr = EXPR9, data = DF9, type = "stat",
-                  do.sim = TRUE, verbose = TRUE, nsim = 1E5)
+RES9a <- propagate(expr = EXPR9, data = DF9, nsim = 1E5)
 ## This will give exactly the same results as in 
 ## 9.4.2.2.7, Table 8, x1 = 0.050.
-RES9a$prop
-RES9a$sim
+RES9a
 
 ## Using covariance matrix with r(x1, x2) = 0.9
 ## We convert to covariances using cor2cov.
@@ -359,13 +327,10 @@ COR9 <- matrix(c(1, 0.9, 0.9, 1), nrow = 2)
 COV9 <- cor2cov(COR9, c(0.005^2, 0.005^2))
 colnames(COV9) <- c("X1", "X2")
 rownames(COV9) <- c("X1", "X2")
-RES9b <- propagate(expr = EXPR9, data = DF9, type = "stat",
-                   use.cov = COV9, do.sim = TRUE, 
-                   verbose = TRUE, nsim = 1E5)
+RES9b <- propagate(expr = EXPR9, data = DF9, cov = COV9)
 ## This will give exactly the same results as in 
 ## 9.4.3.2.1, Table 9, x1 = 0.050.
-RES9b$prop
-RES9b$sim
+RES9b
 
 ######### GUM 2008 Supplement 1 (4) #######################
 ## Example from 9.5 of the GUM 2008 Supplement 1
@@ -383,17 +348,13 @@ Delta <- propagate:::rarcsin(100000, -0.5, 0.5)
 da <- propagate:::rctrap(100000, -1E-6, 1E-6, 0.1E-6)
 dt <- propagate:::rctrap(100000, -0.050, 0.050, 0.025)
 DF10 <- cbind(Ls, D, d1, d2, as, t0, Delta, da, dt, Lnom)
-RES10 <- propagate(expr = EXPR10, data = DF10, type = "sim",
-                   use.cov = FALSE, verbose = TRUE, 
-                   alpha = 0.01)
+RES10 <- propagate(expr = EXPR10, data = DF10, cov = FALSE, alpha = 0.01)
 RES10
 ## This gives the same results as in 9.5.4.2, Table 11.
 ## However: results are exacter than in the GUM 2008
-## manual, especially when comparing sd(Monte Carlo)
-## sd(second-order Taylor expansion)!
+## manual, especially when comparing sd(Monte Carlo) with sd.2!
 ## GUM 2008 gives 32 and 36, respectively.
-RES10$prop
-RES10$sim
+RES10
 
 ########## Comparison to Pythons 'soerp' ###################
 ## Exactly the same results as under 
@@ -403,12 +364,12 @@ H <- c(64, 0.5)
 M <- c(16, 0.1)
 P <- c(361, 2)
 t <- c(165, 0.5)
-C <- c(38.4, 0)
+C <- c(38.4, 0) 
 DAT11 <- makeDat(EXPR11)
-RES11 <- propagate(expr = EXPR11, data = DAT11, type = "stat", 
-                  do.sim = TRUE, verbose = TRUE) 
+RES11 <- propagate(expr = EXPR11, data = DAT11) 
 RES11
 }   
+}
 
 \keyword{array}
 \keyword{algebra}

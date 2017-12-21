@@ -106,10 +106,10 @@ dgtrap <- function (x, min = 0, mode1 = 1, mode2 = 2, max = 3, n1 = 2, n3 = 2, a
     
   if (log)  y <- log(y)
   if (any(is.nan(y))) {
-    warning("NaN in dtrapezoid")
+    warning("dgtrap: NaN in dtrapezoid")
   }
   else if (any(is.na(y))) {
-    warning("NA in dtrapezoid")
+    warning("dgtrap: NA in dtrapezoid")
   }
   return(y)
 }
@@ -138,4 +138,56 @@ dmises <- function(x, mu = 0, kappa = 1) {
   y[-pi + mu <= x & x <= pi + mu] <- exp(kappa * cos(x[-pi + mu <= x & x <= pi + mu] - mu))/(2 * pi * besselI(kappa, 0))
   y[pi + mu < x] <- 0
   return(y)
+}
+
+## Inverse Gaussian distribution, taken from 'statmod' package
+dinvgauss <- function(x, mean, dispersion) {
+  x <- x/mean
+  dispersion <- dispersion * mean
+  d <- (-log(dispersion) - log(2 * pi) - 3 * log(x) - (x - 1)^2/dispersion/x)/2
+  d <- d - log(mean)
+  exp(d)  
+}
+
+## Generalized Extreme Value distribution, taken from 'statmod' package
+dgevd <- function(x, loc = 0, scale = 1, shape = 0) 
+{
+  n <- length(x)
+  loc <- rep(loc, n)
+  sc <- rep(scale, n)
+  sh <- rep(shape, n)
+  d <- (x - loc)/sc
+  r <- log(1/sc)
+  id <- sh == 0
+  if (any(id)) d[id] <- r[id] - d[id] - exp(-d[id])
+  if (any(!id)) {
+    d[!id] <- 1 + sh[!id] * d[!id]
+    good <- (!id & (d > 0)) | is.na(d)
+    if (any(good)) {
+      sc <- sc[good]
+      sh <- sh[good]
+      r <- r[good]
+      z <- d[good]
+      d[good] <- r - z^(-1/sh) - (1/sh + 1) * log(z)
+    }
+    if (any(!id & !good)) d[!id & !good] <- -Inf
+  } 
+  
+  d <- exp(d)
+  return(d)
+}
+
+## Inverse Gamma distribution, taken from 'MCMCpack' package
+dinvgamma <- function(x, shape = 1, scale = 10) 
+{
+  alpha <- shape
+  beta <- scale
+  log.density <- alpha * log(beta) - lgamma(alpha) - (alpha + 1) * log(x) - (beta/x)
+  return(exp(log.density))
+}
+
+## Rayleigh distribution, taken from 
+## PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
+drayleigh <- function(x, mu = 1, sigma = 1) {
+  (x - mu)/(sigma^2 * exp((x - mu)^2/(2 * sigma^2)))
 }

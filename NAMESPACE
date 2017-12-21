@@ -14,14 +14,14 @@ kurtosis,
 fitDistr,
 colVarsC,
 rowVarsC,
-contribution,
 makeDat,
 numGrad,
 numHess,
 predictNLS,
 WelchSatter,
 bigcor,
-interval
+interval,
+stochContr
 )
 
 importFrom("ff", ff)
@@ -29,6 +29,17 @@ importFrom("MASS", mvrnorm)
 importFrom("tmvtnorm", rtmvt)
 importFrom("Rcpp", sourceCpp)
 importFrom("minpack.lm", nls.lm, nls.lm.control)
+importFrom("graphics", abline, barplot, boxplot, hist, lines,
+           par, title)
+importFrom("stats", AIC, coef, cor, cov, D, dcauchy,
+           density, df.residual, dgamma, dlnorm, dlogis,
+           dnorm, dt, dunif, ks.test, mad, median, pnorm, 
+           qbeta, qnorm, qt, quantile, rbinom, rchisq,
+           residuals, rexp, rgamma, rnorm, rt, runif, sd,
+           shapiro.test, var, vcov, dbeta, dchisq, dexp, df)
+importFrom("utils", flush.console, tail)
+
+import(Rcpp)
 
 ## S3 methods
 S3method(print, propagate)
@@ -36,4 +47,4 @@ S3method(plot, propagate)
 S3method(summary, propagate)
 S3method(print, interval)
 
-useDynLib(propagate)
+useDynLib(propagate, .registration = TRUE)

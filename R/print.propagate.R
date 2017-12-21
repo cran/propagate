@@ -3,12 +3,12 @@ print.propagate <- function(x, ...)
   object <- x
   
   ## print error propagation results
-  cat("Results from error propagation:\n")
+  message("Results from uncertainty propagation:")
   print(object$prop)
   
   ## print simulation results
-  if (!is.na(x$resSIM)) {
-    cat("\nResults from Monte Carlo simulation:\n")
+  if (length(x$resSIM) > 1) {
+    message("Results from Monte Carlo simulation:")
     print(object$sim)
   }
 }

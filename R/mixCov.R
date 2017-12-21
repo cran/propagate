@@ -1,66 +1,41 @@
-mixCov <- function(..., use = "everything", method = "pearson")
+mixCov <- function(...)
 {
   ## convert arguments to named list
   covLIST <- list(...)
-  covNAMES <- as.list(sys.call())[-1]
-  names(covLIST)[1:length(covNAMES)] <- covNAMES
   
-  ## function for inflating covariance matrices
-  makeCov <- function(x) {
-    ## calculate final dimension
-    LEN <- sapply(x, function(a) NCOL(a))  
-    DIM <- sum(LEN, na.rm = TRUE)
-    covMAT <- matrix(0, DIM, DIM)
-    NAMES <- names(x)
-                
-    ## initialize counter and names vector
-    counter <- 1
-    nameVEC <- vector("character", length = length(NAMES))
-       
-    ## fill covariance matrix
-    for (i in 1:length(x)) {
-      ITEM <- x[[i]]
-      POS <- counter:(counter + LEN[i] - 1)
-      covMAT[POS, POS] <- ITEM
-      if (LEN[i] == 1) nameVEC[POS] <- NAMES[i] else nameVEC[POS] <- colnames(ITEM)
-      counter <- counter + LEN[i]      
-    } 
-    
-    colnames(covMAT) <- rownames(covMAT) <- make.unique(nameVEC)      
-    return(covMAT)
-  }
+  ## extract function call names
+  allVars <- all.vars(sys.call(0))
   
-  ## preformat data, depending on input
-  preLIST <- vector("list", length = length(covLIST))
+  ## get dimensions
+  dimLIST <- lapply(covLIST, function(x) NCOL(x))
   
+  ## get columns names
+  nameVec <- NULL
+  
+  ## create final covariance matrix
+  DIMS <- do.call("sum", dimLIST)
+  covMAT <- matrix(NA, nrow = sum(DIMS), ncol = sum(DIMS))
+  
+  ## populate matrix and augment name vector
+  counter <- 1
   for (i in 1:length(covLIST)) {
-    tempDAT <- covLIST[[i]]   
-    
-    ## check if input has features of a covariance matrix
-    if (!is.null(rownames(tempDAT))) {
-      if ((all(rownames(tempDAT) == colnames(tempDAT))) && (nrow(tempDAT) == ncol(tempDAT))) 
-      isCov <- TRUE
-    } else isCov <- FALSE
-    
-    ## case 1: input is raw data => covariance matrix
-    if (NROW(tempDAT) > 1 && NCOL(tempDAT) > 1) preLIST[[i]] <- cov(tempDAT, use = use, method = method) 
-    
-    ## case 2: input data is covariance matrix
-    if (isCov) preLIST[[i]] <- tempDAT
-    
-    ## case 3: input data is c(mean, sd) => sd^2
-    if (NROW(tempDAT) == 2 && NCOL(tempDAT) == 1) preLIST[[i]] <- tempDAT[2]^2 
-    
-    ## case 4: input data is single error value
-    if (NROW(tempDAT) == 1 && NCOL(tempDAT) == 1) preLIST[[i]] <- tempDAT^2    
+    if (!is.null(colnames(covLIST[[i]]))) nameVec <- c(nameVec, colnames(covLIST[[i]]))
+    else nameVec <- c(nameVec, allVars[i])
+    POS <- counter:(counter + dimLIST[[i]] - 1)
+    INS <- covLIST[[i]]
+    if (NCOL(INS) > NROW(INS)) INS <- diag(as.numeric(INS)) ## check if vector or covariance matrix
+    if (NCOL(INS) == 1) INS <- as.numeric(INS)
+    covMAT[POS, POS] <- INS
+    counter <- counter + dimLIST[[i]]
   }
   
-  names(preLIST) <- names(covLIST)  
+  ## fill with 0's
+  covMAT[is.na(covMAT)] <- 0
   
-  ## run makeCov over preLIST
-  OUT <- makeCov(preLIST)
+  ## create colnames/rownames
+  rownames(covMAT) <- colnames(covMAT) <- nameVec
   
-  return(OUT)  
+  return(covMAT)  
 }
 
 

@@ -4,7 +4,7 @@
 \title{Creating random samples from a variety of useful distributions}
 
 \description{
-These are random sample generators for 15 different continuous distributions which are not readily available as other \code{\link{Distributions}} in \R. Some of them are implemented in other specialized packages (i.e. \code{rsn} in package 'sn' or \code{rtrapezoid} in package 'trapezoid'), but here they are collated in a way that makes them easily accessible for Monte Carlo-based uncertainty propagation.
+These are random sample generators for 19 different continuous distributions which are not readily available as \code{\link{Distributions}} in \R. Some of them are implemented in other specialized packages (i.e. \code{rsn} in package 'sn' or \code{rtrapezoid} in package 'trapezoid'), but here they are collated in a way that makes them easily accessible for Monte Carlo-based uncertainty propagation.
 }
 
 \details{
@@ -25,6 +25,11 @@ Random samples can be drawn from the following distributions:\cr
 13) Laplacian distribution: \code{propagate:::rlaplace(n, mean = 0, sigma = 1)}\cr
 14) Arcsine distribution: \code{propagate:::rarcsin(n, a = 2, b = 1)}\cr
 15) von Mises distribution: \code{propagate:::rmises(n, mu = 1, kappa = 3)}\cr
+16) Inverse Gaussian distribution: \code{propagate:::rinvgauss(n, mean = 1, dispersion = 1)}
+17) Generalized Extreme Value distribution: \code{propagate:::rgevd(n, loc = 0, scale = 1, shape = 0)}
+with \code{n} = number of samples.\cr
+18) Inverse Gamma distribution: \code{propagate:::rinvgamma(n, shape = 1, scale = 5)}\cr
+19) Rayleigh distribution: \code{propagate:::rrayleigh(n, mu = 1, sigma = 1)}
 with \code{n} = number of samples.\cr
 
 1) - 10) and  13) - 14) use the inverse cumulative distribution function as mapping functions for \code{\link{runif}} (\bold{Inverse Transform Method}):\cr
@@ -38,6 +43,8 @@ with \code{n} = number of samples.\cr
 (4) \eqn{U \sim \mathcal{U}(0, 1)}\cr
 (5) \eqn{X \sim \mathcal{U}(x_{min}, x_{max})}\cr
 (6) \eqn{Y \iff U \le A \cdot \mathcal{U}(X, x_{min}, x_{max})/F(X, \beta)}\cr
+
+16) uses binomial selection from a \eqn{\chi^2}-distribution.
 
 These three distributions are coded in a vectorized approach and are hence not much slower than implementations in C/C++ (0.2 - 0.5 sec for 100000 samples; 3 GHz Quadcore processor, 4 GByte RAM).\cr
 The code for the random generators is in file "distr-samplers.R".
@@ -61,8 +68,8 @@ See also \code{\link{propagate}}, in which GUM 2008 Supplement 1 examples use th
 \url{http://blog.wolfram.com/data/uploads/2013/02/ProbabilityDistributionExplorer.zip}.
 
 \bold{Rejection Sampling in R:}\cr
-Playing with R: Rejection Sampling.\cr
-\url{http://playingwithr.blogspot.de/2011/06/rejection-sampling.html}.
+Rejection Sampling.\cr
+\url{https://www.r-bloggers.com/rejection-sampling/}.
 
 An example of rejection sampling.\cr
 \url{http://www.mas.ncl.ac.uk/~ndjw1/teaching/sim/reject/circ.html}.

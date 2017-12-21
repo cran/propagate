@@ -23,7 +23,7 @@ kurtosis(x, na.rm = FALSE)
 Skewness:
 \deqn{\frac{\frac{1}{n} \sum_{i=1}^n (x_i-\overline{x})^3}{\left(\frac{1}{n} \sum_{i=1}^n (x_i-\overline{x})^2\right)^{3/2}}}
 
-(Excess) Kurtosis:
+(excess) Kurtosis:
 \deqn{\frac{\frac{1}{n} \sum_{i=1}^n (x_i - \overline{x})^4}{\left(\frac{1}{n} \sum_{i=1}^n (x_i - \overline{x})^2\right)^2} - 3}
 }
 

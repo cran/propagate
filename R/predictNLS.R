@@ -22,7 +22,7 @@ alpha = 0.05,
   predVAR <- setdiff(VARS, names(COEF))  
   
   ## check that 'newdata' has same name as predVAR
-  if (!identical(names(newdata)[1:length(predVAR)], predVAR)) stop("newdata should have name(s) ", predVAR, "!\n")
+  if (!identical(names(newdata)[1:length(predVAR)], predVAR)) stop("predictNLS: newdata should have name(s) ", predVAR, "!\n")
     
   ## get variance-covariance matrix
   VCOV <- vcov(model)
@@ -33,34 +33,31 @@ alpha = 0.05,
   propLIST <- vector("list", length = NR)
   
   for (i in 1:NR) {
-    cat("Propagating predictor value #", i, " ...\n", sep = "")
-    tempDATA <- newdata[i, ]   
-    names(tempDATA) <- colnames(newdata)  
-                  
+    #cat("Propagating predictor value #", i, " ...\n", sep = "")
+    message("predictNLS: ", paste0("Propagating predictor value #", i, "..."))
+    tempDATA <- newdata[i, , drop = FALSE]
+    colnames(tempDATA) <- colnames(newdata) 
+    
     ## create dataframe of variables for 'propagate'
     SEL <- which(names(tempDATA) == predVAR) 
     predVEC <- c(COEF, as.numeric(tempDATA[SEL]))  
     names(predVEC) <- c(names(COEF), predVAR)
     DF <- rbind(predVEC, 0)  
-    row.names(DF) <- NULL      
-                
+    row.names(DF) <- NULL 
+    
     ## create covariance matrix for 'propagate'       
-    if (NCOL(tempDATA) == length(predVAR)) 
-      forCOV <- rep(0, length(predVAR)) else forCOV <- tempDATA[, (length(predVAR) + 1):(2 * length(predVAR))] 
+    if (NCOL(tempDATA) == length(predVAR)) forCOV <- matrix(rep(0, length(predVAR)), nrow = 1) 
+    else forCOV <- tempDATA[, -(1:length(predVAR)), drop = FALSE] 
+    colnames(forCOV) <- predVAR
+   
+    ## create covariance matrix
+    COV <- mixCov(VCOV, forCOV^2)
+    colnames(COV) <- rownames(COV) <- colnames(DF)
     
-    COV <- VCOV
-    
-    for (k in 1:length(forCOV)) {      
-      COV <- mixCov(COV, forCOV[k])
-    }
-    
-    SEL <- tail(1:nrow(COV), length(predVAR))
-    dimnames(COV)[[1]][SEL] <- dimnames(COV)[[2]][SEL] <- predVAR      
-      
-    ## call 'propagate'    
-    PROP <- propagate(expr = EXPR, data = DF, use.cov = COV, alpha = alpha, ...)
+    ## call 'propagate'   
+    PROP <- propagate(expr = EXPR, data = DF, cov = COV, alpha = alpha, ...)
     propLIST[[i]] <- PROP
-     
+    
     ## populate outMAT and override confidence/prediction values from 'propagate'
     outPROP <- PROP$prop
       

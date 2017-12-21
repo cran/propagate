@@ -37,6 +37,27 @@ A 2-element vector with the resulting interval and an (optional) plot of all eva
 Andrej-Nikolai Spiess
 }   
 
+\references{
+\bold{Wikipedia entry is quite good, especially the section
+on the 'dependency problem':}\cr
+\url{http://en.wikipedia.org/wiki/Interval_arithmetic}
+
+\bold{Comparison to Monte Carlo and error propagation:}\cr
+Interval Arithmetic in Power Flow Analysis.\cr
+Wang Z & Alvarado FL.\cr
+Power Industry Computer Application Conference (1991): 156-162.
+
+\bold{Computer implementation}\cr
+Interval arithmetic: From principles to implementation.\cr
+Hickey T, Ju Q, Van Emden MH.\cr
+\emph{JACM} (2001), \bold{48}: 1038-1068.
+
+Complete Interval Arithmetic and its Implementation on the Computer.\cr
+Kulisch UW.\cr
+In: Numerical Validation in Current Hardware Architectures.
+Lecture Notes in Computer Science \bold{5492} (2009): 7-26. 
+}
+
 \examples{
 ## Example 1: even squaring of negative interval.
 EXPR1 <- expression(x^2)

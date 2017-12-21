@@ -1,6 +1,6 @@
 makeDat <- function(expr) { 
   
-  if (!is.expression(expr)) stop("input must be an expression!")
+  if (!is.expression(expr)) stop("makeDat: input must be an expression!")
   
   ## get all variables names from workspace
   LS <- ls(envir = .GlobalEnv)
@@ -17,7 +17,7 @@ makeDat <- function(expr) {
   ## in expression and workspace
   if (length(exprNAMES) != length(lsNAMES)) {
     DIFF <- setdiff(exprNAMES, lsNAMES)
-    stop("object '", DIFF, "' in expresssion but not in workspace!")    
+    stop("makeDat: object '", DIFF, "' in expresssion but not in workspace!")    
   }
   
   ## create data list and combine to dataframe
