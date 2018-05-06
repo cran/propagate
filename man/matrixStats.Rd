@@ -36,9 +36,7 @@ A vector with the variance values.
 \dontrun{
 MAT <- matrix(rnorm(10 * 500000), ncol = 10)
 system.time(RES1 <- apply(MAT, 1, var))
-
 system.time(RES2 <- rowVarsC(MAT))
-
 all.equal(RES1, RES2)
 }
 }  

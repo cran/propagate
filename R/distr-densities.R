@@ -7,27 +7,28 @@ dsn <- function (x, location = 0, scale = 1, shape = 0, log = FALSE)
   if (log) loglik else exp(loglik)  
 }
 
-## generalized normal distribution,
+## generalized normal distribution, 
 ## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 dgnorm <- function(x, alpha = 1, xi = 1, kappa = -0.1) 
 {
   1/(exp(log(1 - (kappa * (x - xi))/alpha)^2/(2 * kappa^2)) * (sqrt(2 * pi) * (alpha - x * kappa + kappa * xi))) 
 }
 
-## scaled and shifted t-distribution,
+## scaled and shifted t-distribution, 
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 dst <- function (x, mean = 0, sd = 1, df = 2) 
 {
   dt((x - mean)/sd, df = df)/sd
 }
 
-## Gumbel distribution,
+## Gumbel distribution, 
 ## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 dgumbel <- function(x, location = 0, scale = 1) {
   z <- (x - location)/scale
   (1/scale) * exp(-z - exp(-z))
 }
 
-## Johnson SU distribution,
+## Johnson SU distribution, 
 ## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 dJSU <- function (x, xi = 0, lambda = 1, gamma = 1, delta = 1) 
 {
@@ -132,7 +133,7 @@ darcsin <- function(x, a = 0, b = 1) {
 
 ## von Mises distribution,
 ## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
-dmises <- function(x, mu = 0, kappa = 1) {  
+dmises <- function(x, mu = 0, kappa = 3) {  
   y <- numeric(length(x))  
   y[x < -pi + mu] <- 0
   y[-pi + mu <= x & x <= pi + mu] <- exp(kappa * cos(x[-pi + mu <= x & x <= pi + mu] - mu))/(2 * pi * besselI(kappa, 0))
@@ -186,8 +187,25 @@ dinvgamma <- function(x, shape = 1, scale = 10)
   return(exp(log.density))
 }
 
-## Rayleigh distribution, taken from 
-## PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
+## Rayleigh distribution, 
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 drayleigh <- function(x, mu = 1, sigma = 1) {
   (x - mu)/(sigma^2 * exp((x - mu)^2/(2 * sigma^2)))
 }
+
+## Burr VIII distribution,
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
+dburr <- function(x, k) ((k * (2/pi)^k) * exp(x)) * atan(exp(x))^(k-1)/(1 + exp(2 * x))
+
+## Chi distribution,
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
+dchi <- function(x, nu) (2^(1 - nu/2) * x^(nu - 1))/(gamma(nu/2) * exp(x^2/2))
+
+## Inverse Chi-square distribution,
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
+dinvchisq <- function(x, nu) x^(-1 - nu/2)/((2^(nu/2) * gamma(nu/2)) * exp(1/(2 * x)))
+
+## Cosine distribution,
+## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
+dcosine <- function(x, mu, sigma) (1 + cos((pi * (x - mu))/sigma))/(2 * sigma)
+

@@ -1,12 +1,17 @@
 fitDistr <- function(
-object, 
-nbin = 100,
-weights = NULL,
-verbose = TRUE, 
-plot = TRUE,  ...)
+  object, 
+  nbin = 100,
+  weights = FALSE,
+  verbose = TRUE, 
+  brute = c("fast", "slow"),
+  plot = c("hist", "qq"),  
+  distsel = NULL,
+  ...)
 {
   op <- options(warn = -1)
   on.exit(options(op))
+  plot <- match.arg(plot)
+  brute <- match.arg(brute)
   
   if (is.vector(object)) X <- object
   else if (class(object) == "propagate") X <- object$resSIM
@@ -24,8 +29,8 @@ plot = TRUE,  ...)
   DENS$y <- DENS$density    
   
   ## unweighted fitting or weighted fitting 
-  if (is.null(weights)) wts <- rep(1, length(DENS$x)) 
-  if (isTRUE(weights)) {
+  wts <- rep(1, length(DENS$x)) 
+  if (weights) {
     wts <- 1/DENS$counts
     wts[!is.finite(wts)] <- 1
   }
@@ -33,12 +38,12 @@ plot = TRUE,  ...)
     if (length(weights) != length(DENS$x)) stop("fitDistr: 'weights' must be a vector of length ", length(DENS$x), "!")
     wts <- weights
   }
-    
+  
   ## optimization function, minimum residual sum-of-squares is criterion
   optFun <- function(start, densfun, quantiles, density, eval = FALSE) {
     START <- as.list(start)
     START$x <- quantiles
-         
+    
     ## get density values from density function
     EVAL <- try(do.call(densfun, START), silent = TRUE) 
     if (inherits(EVAL, "try-error")) return(NA) 
@@ -49,8 +54,9 @@ plot = TRUE,  ...)
     if (eval) return(EVAL) else return(RSS)   
   }
   
-  ## AIC function for optFun output
-  fitAIC <- function(fitobj) {
+  ## AIC/BIC function for optFun output
+  ## version 1.0-6: added BIC 
+  fitBIC <- function(fitobj) {
     ## taken and modified from stats:::logLik.nls
     RESID <- fitobj$fvec
     N <- length(RESID)
@@ -60,7 +66,7 @@ plot = TRUE,  ...)
     attr(VAL, "nobs") <- sum(!ZW)
     attr(VAL, "df") <- 1L + length(fitobj$par)
     class(VAL) <- "logLik"
-    AIC(VAL)
+    BIC(VAL)
   }
   
   ## define distribution names
@@ -74,7 +80,6 @@ plot = TRUE,  ...)
                  "Triangular", 
                  "Trapezoidal",
                  "Curvilinear Trapezoidal",
-                 "Generalized Trapezoidal",
                  "Gamma",  
                  "Inverse Gamma",
                  "Cauchy", 
@@ -92,8 +97,12 @@ plot = TRUE,  ...)
                  "Rayleigh",
                  "Chi-Square",
                  "Exponential",
-                 "F-"
-                 )
+                 "F-",
+                 "Burr",
+                 "Chi",
+                 "Inverse Chi-Square",
+                 "Cosine"
+  )
   
   ## define distribution functions
   funLIST <- list(dnorm, 
@@ -106,7 +115,6 @@ plot = TRUE,  ...)
                   dtriang, 
                   dtrap,
                   dctrap, 
-                  dgtrap,
                   dgamma,   
                   dinvgamma,
                   dcauchy, 
@@ -124,14 +132,18 @@ plot = TRUE,  ...)
                   drayleigh,
                   dchisq,
                   dexp,
-                  df
-                  )
+                  df,
+                  dburr,
+                  dchi,
+                  dinvchisq,
+                  dcosine
+  )
   
   ## define start parameter list
   parLIST <- list(norm = c(mean = MEAN, sd = SD), 
                   sn = c(location = MEAN, scale = SD, shape = 1),
                   gnorm = c(alpha = 1, xi = MEAN, kappa = -0.1), 
-                  lnorm = c(meanlog = mean(log(X)), sdlog = sd(log(X))),
+                  lnorm = c(meanlog = 0, sdlog = 1),
                   st = c(mean = MEAN, sd = SD, df = 10),
                   logis = c(location = MEAN, scale = SD), 
                   unif = c(min = MIN, max = MAX), 
@@ -139,9 +151,6 @@ plot = TRUE,  ...)
                   trap = c(a = 1.01 * MIN, b = MIN + 0.5 * (MEAN - MIN), 
                            c = MEAN + 0.5 * (MAX - MEAN), d = 0.99 * MAX),
                   ctrap = c(a = 1.01 * MIN, b = 0.99 * MAX, d = 0.01),
-                  gtrap = c(min = 1.01 * MIN, mode1 = MIN + 0.5 * (MEAN - MIN), 
-                            mode2 = MEAN + 0.5 * (MAX - MEAN), max = 0.99 * MAX, 
-                            n1 = 2, n3 = 2, alpha = 1), 
                   gamma = c(shape = MEAN^2/VAR, rate = MEAN/VAR),   
                   invgamma = c(shape = 1, scale = 10),
                   cauchy = c(location = MEAN, scale = SD), 
@@ -153,84 +162,115 @@ plot = TRUE,  ...)
                   beta = c(shape1 = 10, shape2 = 10),
                   beta2 = c(alpha1 = 10, alpha2 = 10, a = 0.9 * MIN, b = 1.1 * MAX),
                   arcsin = c(a = MIN, b = MAX),
-                  mises = c(mu = MEAN, kappa = 3),
+                  mises = c(mu = MEAN, kappa = 1),
                   invgauss = c(mean = MEAN, dispersion = 0.1),
                   gevd = c(loc = MEAN, scale = SD, shape = 0),
                   rayleigh = c(mu = MEAN, sigma = SD),
                   chisq = c(df = 5),
                   exp = c(rate = 1),
-                  fdist = c(df1 = 10, df2 = 10)
-                  )
+                  fdist = c(df1 = 10, df2 = 10),
+                  burr = c(k = 1),
+                  chi = c(nu = 5),
+                  invchisq = c(nu = 5),
+                  cosine = c(mu = MEAN, sigma = SD)
+  )
+                  
+  ## version 1-0-6: check for function selection
+  if (!is.null(distsel) & !all(distsel %in% 1:length(distNAMES))) 
+    stop(paste("Selection of distributions must be in 1 to", length(distNAMES), "!"))
+  if (!is.null(distsel)) iter <- distsel else iter <- 1:length(distNAMES)
   
-  ## preallocate fit list and AIC vector
-  fitLIST <- vector("list", length = length(distNAMES))
-  AICS <- rep(NA, length(distNAMES))
+  ## preallocate list and vectors
+  fitLIST <- vector("list", length = length(iter))
+  BICS <- RSS <- MSE <- rep(NA, length(iter))
   
-  ## fit all distributions and calculate AICS
-  for (i in 1:length(distNAMES)) {
-    if (verbose) message("Fitting ", distNAMES[i]," distribution..", sep = "")
+  ## fit all distributions 
+  for (i in 1:length(iter)) {
+    sel <- iter[i]
+    if (verbose) message(sel, " of ", length(distNAMES), ": Fitting ", distNAMES[sel]," distribution...", sep = "")
     
-    ## use gridded 'optFun' if complicated distribution
-    if (distNAMES[i] %in% c("Johnson SU", "Johnson SB", "3P Weibull", "3P Beta",
-                            "Generalized normal")) {
-      ## create grid of starting parameters or single paramater
-      SEQ <- sapply(parLIST[[i]], function(x) x * 10^(-1:1))
-      GRID <- do.call(expand.grid, split(SEQ, 1:ncol(SEQ)))       
-    } else GRID <- matrix(parLIST[[i]], nrow = 1)
-    colnames(GRID) <- names(parLIST[[i]])
+    ## version 1.0-6: use gridded 'optFun' for all distributions
+    ## create grid of starting parameters or single parameter
+    if (brute == "slow") SEQ <- sapply(parLIST[[sel]], function(x) x * c(0.01, 0.1, 1, 10, 100))
+    else SEQ <- sapply(parLIST[[sel]], function(x) x * c(0.1, 1, 10))
+    GRID <- do.call(expand.grid, split(SEQ, 1:ncol(SEQ)))  
+    colnames(GRID) <- names(parLIST[[sel]])
     
     ## preallocate empty vector for RSS
     rssVEC <- rep(NA, nrow(GRID))
-        
+    
     ## collect RSS for all grid values by calling 'optFun'
     for (j in 1:nrow(GRID)) {
       if (verbose) counter(j)
       PARS <- GRID[j, ]
-      FIT <- try(nls.lm(par = PARS, fn = optFun, densfun = funLIST[[i]], quantiles = DENS$x,
-                       density = DENS$y, control = nls.lm.control(maxiter = 10000, maxfev = 10000)), silent = TRUE)
+      FIT <- try(nls.lm(par = PARS, fn = optFun, densfun = funLIST[[sel]], quantiles = DENS$x,
+                        density = DENS$y, control = nls.lm.control(maxiter = 10000, maxfev = 10000)), silent = TRUE)
       if (inherits(FIT, "try-error")) rssVEC[j] <- NA else rssVEC[j] <- FIT$deviance     
     }
     
-    ## select parameter combination with lowest RSS and re-fit, if nrow(START > 1)
-    if (length(rssVEC) > 1) {
-      WHICH <- which.min(rssVEC) 
-      bestPAR <- GRID[WHICH, ]
-      FIT <- try(nls.lm(par = bestPAR, fn = optFun, densfun = funLIST[[i]], quantiles = DENS$x,
-                       density = DENS$y, control = nls.lm.control(maxiter = 10000, maxfev = 10000)), silent = TRUE)      
-    }   
-      
-    ## calculate AIC values
+    ## select parameter combination with lowest RSS and re-fit
+    WHICH <- which.min(rssVEC) 
+    bestPAR <- GRID[WHICH, ]
+    FIT <- try(nls.lm(par = bestPAR, fn = optFun, densfun = funLIST[[sel]], quantiles = DENS$x,
+                      density = DENS$y, control = nls.lm.control(maxiter = 10000, maxfev = 10000)), silent = TRUE)      
+    ## calculate GOF measures
     if (inherits(FIT, "try-error")) {
       FIT <- NA
-      if (verbose) message("fitDistr: error in calculating AIC.")
+      if (verbose) message("fitDistr: error in calculating BIC.\n")
     } else {
       fitLIST[[i]] <- FIT
-      AICS[i] <- tryCatch(fitAIC(FIT), error = function(e) NA)
-      if (verbose) message("Done.\n")
+      BICS[i] <- tryCatch(fitBIC(FIT), error = function(e) NA)
+      RSS[i] <- FIT$fvec^2
+      MSE[i] <- mean(FIT$fvec^2, na.rm = TRUE)
     }    
+    cat("\n\n")
   } 
   
   ## aggregate and sort ascending by AIC
-  ORDER <- order(AICS)
-  aicDAT <- data.frame("Distribution" = distNAMES, "AIC" = AICS)
-  aicDAT <- aicDAT[ORDER, ]
+  ORDER <- order(BICS)
+  statDAT <- data.frame("Distribution" = distNAMES[iter], "BIC" = BICS, "RSS" = RSS, "MSE" = MSE)
+  statDAT <- statDAT[ORDER, ]
   
   ## select best fit
   SEL <- ORDER[1]
   bestFIT <- fitLIST[[SEL]]
   evalLIST <- as.list(bestFIT$par)
   evalLIST$x <- DENS$x
-  evalY <- do.call(funLIST[[SEL]], evalLIST)  
+  evalY <- do.call(funLIST[[iter[SEL]]], evalLIST)  
   
-  ## plot best fit
-  if (plot) {     
-    hist(X, freq = FALSE, breaks = nbin, cex.axis = 1.5, las = 0, 
-                          cex.lab = 1.5, xlab = "Bin", 
-                          main = paste(distNAMES[SEL], "distribution, AIC =", round(AICS[SEL], 3)))
-    lines(DENS$x, evalY, col = 2, lty = 2, lwd = 2)    
+  ## version 1.0-6: sort fitLIST by AIC
+  fitLIST <- fitLIST[ORDER]
+  names(fitLIST) <- distNAMES[ORDER]
+  
+  ## version 1.0-6: create parLIST and s.e. list
+  parLIST <- lapply(fitLIST, function(x) coef(x))
+  seLIST <- lapply(fitLIST, function(x) tryCatch(sqrt(diag(vcov(x))), error = function(e) NA))
+                   
+  ## version 1.0-6: create sorted funLIST
+  funLIST <- funLIST[ORDER]
+  names(funLIST) <- distNAMES[iter[ORDER]]
+  
+  ## plot best fit as histogram
+  if (plot == "hist") {     
+    TEXT <- paste(distNAMES[iter[SEL]], "distribution,\n BIC =", round(BICS[SEL], 3))
+    hist(X, freq = FALSE, breaks = nbin, cex.axis = 1.5, las = 0, col = "dodgerblue3",
+         cex.lab = 1.5, xlab = "Bin", main = TEXT, ...)
+    lines(DENS$x, evalY, col = "red3", lty = 1, lwd = 3, ...)    
   }  
-      
-  names(fitLIST) <- distNAMES    
   
-  return(list(aic = aicDAT, fit = fitLIST, bestfit = bestFIT, fitted = evalY, residuals = DENS$y - evalY))
+  ## version 1.0-6: plot best fit as qqplot
+  if (plot == "qq") {
+    TEXT <- paste(distNAMES[iter[SEL]], "distribution\n BIC =", round(BICS[SEL], 3))
+    qqplot(DENS$y, evalY, asp = 1, pch = 16, col = "dodgerblue3", xlab = "Empirical density", 
+           ylab = "Theoretical density", main = TEXT, ...)
+    grid()
+    segments(-0.1, -0.1, 1.2 * max(evalY, na.rm = TRUE), 1.2 * max(evalY, na.rm = TRUE), col = "red3", lty = 1, lwd = 2, ...)
+  }
+  
+  OUT <- list(stat = statDAT, fit = fitLIST, par = parLIST, se = seLIST, dens = funLIST, 
+              bestfit = bestFIT, bestpar = parLIST[[1]], bestse = seLIST[[1]], 
+              fitted = evalY, residuals = DENS$y - evalY)
+  
+  class(OUT) <- "fitDistr"
+  return(OUT)
 }

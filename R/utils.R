@@ -5,7 +5,7 @@ makeGrad <- function(expr, order = NULL)
   if (!is.null(order)) VARS <- VARS[order]
   FUN <- function(x) D(expr, x)
   vecGRAD <- sapply(VARS, FUN)
-  vecGRAD <- matrix(vecGRAD, nrow = 1)    
+  vecGRAD <- matrix(vecGRAD, nrow = 1)  
   return(vecGRAD)  
 } 
 
@@ -95,3 +95,31 @@ print.interval <- function(x, ...)
   cat("[", x[1], ", ", x[2], "]", sep = "")
 }
 
+print.propagate <- function(x, ...)
+{
+  object <- x
+  
+  ## print error propagation results
+  message("Results from uncertainty propagation:")
+  print(object$prop)
+  
+  ## print simulation results
+  if (length(x$resSIM) > 1) {
+    message("Results from Monte Carlo simulation:")
+    print(object$sim)
+  }
+}
+
+print.fitDistr <- function(x, ...)
+{
+  message("Best fit is ", names(x$fit)[[1]], " Distribution.")
+  message("Parameters:")
+  print(x$par[[1]])
+  message("Standard errors:")
+  print(x$se[[1]])
+  message("Goodness of fit:")
+  cat("BIC =", x$stat[1, "BIC"])
+}
+
+isFALSE <- function (x) is.logical(x) && length(x) == 1L && !is.na(x) && !x
+isTRUE <- function (x) is.logical(x) && length(x) == 1L && !is.na(x) && x

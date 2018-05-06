@@ -121,8 +121,8 @@ rarcsin <- function(n, a = 2, b = 1)
 rmises <- function(n, mu = 1, kappa = 3)  
 {
   OUT <- numeric(n)
-  LOWER <- mu - pi
-  UPPER <- mu + pi  
+  LOWER <- mu - 2 * pi
+  UPPER <- mu + 2 * pi  
   POS1 <- 1
   nSAMPLE <- 0
   N <- n
@@ -308,4 +308,67 @@ rrayleigh <- function(n, mu = 1, sigma = 1)
 {
   RUNIF <- runif(n)
   mu + sigma * sqrt(log(1/(1 - RUNIF)^2))
+}
+
+## Random samples from the Burr VIII distribution, taken from 
+## inverseCDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
+rburr <- function(n, k = 1) 
+{
+  RUNIF <- runif(n)
+  log(tan(0.5 * pi * RUNIF^(1/k)))
+}
+
+## Random samples from the Chi distribution, by ANS
+rchi <- function(n, nu = 5) sqrt(rchisq(n, nu))
+
+## Random samples from the Inverse Chi-Square distribution, taken from 
+## inverseCDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
+rinvchisq <- function(n, nu = 5) 1/rchisq(n, nu)
+
+## Random samples from the Cosine distribution,  
+## using "Rejection Sampling" and runif as the enveloping distribution
+rcosine <- function(n, mu = 5, sigma = 1) 
+{
+  OUT <- numeric(n)
+  LOWER <- mu - sigma 
+  UPPER <- mu + sigma    
+  POS1 <- 1
+  nSAMPLE <- 0
+  N <- n
+  maxDUNIF <- 1/(UPPER - LOWER) 
+  
+  while(nSAMPLE < n) {
+    ## (1) sample from rectangular distribution 
+    u <- runif(N)   
+    
+    ## (2) Sample from enveloping rectangular distribution from mu - pi/mu + pi
+    x <- runif(N, LOWER, UPPER)  
+    
+    ## (3) calculate scaling factor
+    DCOSINE <- (1 + cos((pi * (x - mu))/sigma))/(2 * sigma)    
+    
+    if (nSAMPLE == 0) {      
+      maxDCOSINE <- max(DCOSINE, na.rm = TRUE)
+      A <- 1.1 * maxDCOSINE/maxDUNIF       
+    }       
+    
+    ## (4) Accept candidate value, if probability u is smaller or equal than the density g(x)
+    ## at x divided by the density of f(x) * A (scale) 
+    VAL <- 1/A * DCOSINE/maxDUNIF    
+    SEL <- x[u <= VAL]
+    
+    ## (5) fill result vector and increase start position,
+    ## calculate ratio of true events
+    LEN <- length(SEL)
+    if (nSAMPLE == 0) RATIO <- N/LEN/10
+    nSAMPLE <- nSAMPLE + LEN
+    POS2 <- POS1 + LEN - 1
+    OUT[POS1:POS2] <- SEL
+    POS1 <- POS2 + 1    
+    
+    ## if n(events) < n, restart with ratio as factor
+    if (nSAMPLE < n) N <- RATIO * n    
+  }  
+  
+  return(OUT[1:n])
 }

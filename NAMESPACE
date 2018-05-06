@@ -30,13 +30,14 @@ importFrom("tmvtnorm", rtmvt)
 importFrom("Rcpp", sourceCpp)
 importFrom("minpack.lm", nls.lm, nls.lm.control)
 importFrom("graphics", abline, barplot, boxplot, hist, lines,
-           par, title)
-importFrom("stats", AIC, coef, cor, cov, D, dcauchy,
+           par, title, grid, segments)
+importFrom("stats", BIC, coef, cor, cov, D, dcauchy,
            density, df.residual, dgamma, dlnorm, dlogis,
            dnorm, dt, dunif, ks.test, mad, median, pnorm, 
            qbeta, qnorm, qt, quantile, rbinom, rchisq,
            residuals, rexp, rgamma, rnorm, rt, runif, sd,
-           shapiro.test, var, vcov, dbeta, dchisq, dexp, df)
+           shapiro.test, var, vcov, dbeta, dchisq, dexp, df, qqplot, 
+           weights, formula, as.formula)
 importFrom("utils", flush.console, tail)
 
 import(Rcpp)
@@ -46,5 +47,6 @@ S3method(print, propagate)
 S3method(plot, propagate)
 S3method(summary, propagate)
 S3method(print, interval)
+S3method(print, fitDistr)
 
 useDynLib(propagate, .registration = TRUE)

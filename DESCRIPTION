@@ -3,8 +3,8 @@ Type: Package
 LazyLoad: no
 LazyData: no
 Title: Propagation of Uncertainty
-Version: 1.0-5
-Date: 2017-12-19
+Version: 1.0-6
+Date: 2018-05-02
 Author: Andrej-Nikolai Spiess <a.spiess@uke.uni-hamburg.de>        
 Maintainer: Andrej-Nikolai Spiess <a.spiess@uke.uni-hamburg.de>
 Description: Propagation of uncertainty using higher-order Taylor expansion and Monte Carlo simulation.
@@ -13,6 +13,6 @@ Depends: R (>= 2.13.0), MASS, tmvtnorm, Rcpp (>= 0.10.1), ff,
         minpack.lm
 LinkingTo: Rcpp
 NeedsCompilation: yes
-Packaged: 2017-12-21 06:27:00 UTC; ans
+Packaged: 2018-05-06 09:00:48 UTC; ans
 Repository: CRAN
-Date/Publication: 2017-12-21 14:13:09 UTC
+Date/Publication: 2018-05-06 17:08:12 UTC
