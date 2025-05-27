@@ -1,7 +1,7 @@
 stochContr <- function(prop, plot = TRUE)
 {
   ## check for correct input
-  if (class(prop) != "propagate") stop("This is no 'propagate' object!")
+  if (!inherits(prop, "propagate")) stop("This is no 'propagate' object!")
   
   ## get data from 'prop'
   DATA <- prop$data

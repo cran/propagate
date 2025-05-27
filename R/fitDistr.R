@@ -14,7 +14,7 @@ fitDistr <- function(
   brute <- match.arg(brute)
   
   if (is.vector(object)) X <- object
-  else if (class(object) == "propagate") X <- object$resSIM
+  else if (inherits(object, "propagate")) X <- object$resSIM
   else stop("fitDistr: object must be either a numeric vector of an object of class 'propagate'!")
   
   MEAN <- mean(X, na.rm = TRUE)

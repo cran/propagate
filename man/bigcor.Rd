@@ -40,7 +40,7 @@ Andrej-Nikolai Spiess
 }   
 
 \references{
-\url{http://rmazing.wordpress.com/2013/02/22/bigcor-large-correlation-matrices-in-r/}
+\url{https://rmazing.wordpress.com/2013/02/22/bigcor-large-correlation-matrices-in-r/}
 }
 
 \examples{

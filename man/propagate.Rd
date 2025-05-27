@@ -49,7 +49,7 @@ The following transformations based on two variables \eqn{x_1, x_2} illustrate t
 \deqn{= \frac{1}{2!} \left( \left(\sum_{i=1}^2 \frac{\partial}{\partial x_i} \sigma_i \right)^2 \it f \right)^2}
 \cr
 with \eqn{\mathrm{E}(y)} = expectation of \eqn{y}, \eqn{\mathbf{\sigma_y^2}} = variance of \eqn{y}, \eqn{{\color{red} \nabla}} = the p x n gradient matrix with all partial first derivatives \eqn{{\color{red} \rm{j_i}}}, \eqn{\mathbf{\Sigma}} = the p x p covariance matrix, \eqn{{\color{blue}\mathbf{H}}} the Hessian matrix with all partial second derivatives \eqn{{\color{blue} \rm{h_i}}}, \eqn{\sigma_i} = the uncertainties and \eqn{\rm{tr}(\cdot)} = the trace (sum of diagonal) of a matrix. Note that because the Hessian matrices are symmetric, \eqn{{\color{blue} \rm{h_2}} = {\color{blue} \rm{h_3}}}. For a detailed derivation, see 'References'.\cr
-The second-order Taylor expansion corrects for bias in nonlinear expressions as the first-order Taylor expansion assumes linearity around \eqn{\bar{x}_i}. There is also a Python library available for second-order error propagation ('soerp', \url{https://pypi.python.org/pypi/soerp}). The 'propagate' package gives \bold{exactly} the same results, see last example under "Examples".\cr
+The second-order Taylor expansion corrects for bias in nonlinear expressions as the first-order Taylor expansion assumes linearity around \eqn{\bar{x}_i}. There is also a Python library available for second-order error propagation ('soerp', \url{https://pypi.org/project/soerp}). The 'propagate' package gives \bold{exactly} the same results, see last example under "Examples".\cr
 Depending on the input expression, the uncertainty propagation may result in an error that is not normally distributed. The Monte Carlo simulation, starting with a symmetric t-distributions of the variables, can clarify this. For instance, a high tendency from deviation of normality is encountered in formulas in which the error of the denominator is relatively large or in exponential models with a large error in the exponent.\cr 
 
 For setups in which there is no symbolic derivation possible (i.e. \code{e <- expression(abs(x))} => "Function 'abs' is not in the derivatives table") the function automatically switches from symbolic (using \code{\link{makeGrad}} or \code{\link{makeHess}}) to numeric (\code{\link{numGrad}} or \code{\link{numHess}}) differentiation.\cr
@@ -96,11 +96,11 @@ University Science Books (1996), New York.
 
 Evaluation of measurement data - Guide to the expression of uncertainty in measurement.\cr
 JCGM 100:2008 (GUM 1995 with minor corrections).\cr
-\url{http://www.bipm.org/utils/common/documents/jcgm/JCGM_100_2008_E.pdf}.
+\url{https://www.bipm.org/documents/20126/2071204/JCGM_100_2008_E.pdf/}.
 
 Evaluation of measurement data - Supplement 1 to the Guide to the expression of uncertainty in measurement - Propagation of distributions using a Monte Carlo Method.\cr
 JCGM 101:2008.\cr
-\url{http://www.bipm.org/utils/common/documents/jcgm/JCGM_101_2008_E.pdf}.
+\url{https://www.bipm.org/documents/20126/2071204/JCGM_100_2008_E.pdf/}.
 
 \bold{Higher-order Taylor expansion:}\cr
 On higher-order corrections for propagating uncertainties.\cr
@@ -113,7 +113,7 @@ Mekid S & Vaja D.\cr
 
 \bold{Matrix algebra for error propagation:}\cr
 An Introduction to Error Propagation: Derivation, Meaning and Examples of Equation Cy = FxCxFx^t.\cr
-\url{www.nada.kth.se/~kai-a/papers/arrasTR-9801-R3.pdf}.
+\url{https://www.research-collection.ethz.ch/handle/20.500.11850/82620}.
 
 Second order nonlinear uncertainty modeling in strapdown integration using MEMS IMUs.\cr
 Zhang M, Hol JD, Slot L, Luinge H.\cr

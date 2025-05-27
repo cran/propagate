@@ -65,13 +65,9 @@ See also \code{\link{propagate}}, in which GUM 2008 Supplement 1 examples use th
 }
 
 \references{
-\bold{Inverse CDFs were taken from:}\cr
-"The Ultimate Univariate Probability Distribution Explorer"\cr
-\url{http://blog.wolfram.com/data/uploads/2013/02/ProbabilityDistributionExplorer.zip}.
-
 \bold{Rejection Sampling in R:}\cr
 Rejection Sampling.\cr
-\url{https://www.r-bloggers.com/rejection-sampling/}.
+\url{https://www.r-bloggers.com/2011/06/rejection-sampling/}.
 
 An example of rejection sampling.\cr
 \url{http://www.mas.ncl.ac.uk/~ndjw1/teaching/sim/reject/circ.html}.

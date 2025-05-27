@@ -24,7 +24,7 @@ fitDistr(object, nbin = 100, weights = FALSE, verbose = TRUE,
 }
 
 \details{
-Fits the following 32 distributions using (weighted) residual sum-of-squares as the minimization criterion for \code{\link{nls.lm}}:\cr
+Fits the following 32 distributions using (weighted) residual sum-of-squares as the minimization criterion for \code{minpack.lm:::nls.lm}:\cr
 1) Normal distribution (\code{dnorm}) => \url{https://en.wikipedia.org/wiki/Normal_distribution}\cr
 2) Skewed-normal distribution (\code{propagate:::dsn}) => \url{https://en.wikipedia.org/wiki/Skew_normal_distribution}\cr
 3) Generalized normal distribution (\code{propagate:::dgnorm}) => \url{https://en.wikipedia.org/wiki/Generalized_normal_distribution}\cr 
@@ -41,7 +41,7 @@ Fits the following 32 distributions using (weighted) residual sum-of-squares as 
 14) Laplace distribution (\code{propagate:::dlaplace}) => \url{https://en.wikipedia.org/wiki/Laplace_distribution}\cr 
 15) Gumbel distribution (\code{propagate:::dgumbel}) => \url{https://en.wikipedia.org/wiki/Gumbel_distribution}\cr 
 16) Johnson SU distribution (\code{propagate:::dJSU}) => \url{https://en.wikipedia.org/wiki/Johnson_SU_distribution}\cr 
-17) Johnson SB distribution (\code{propagate:::dJSB}) => \url{https://www.mathwave.com/articles/johnson_sb_distribution.html}\cr 
+17) Johnson SB distribution (\code{propagate:::dJSB}) => \url{https://variation.com/wp-content/distribution_analyzer_help/hs126.htm}\cr 
 18) Three-parameter Weibull distribution (\code{propagate:::dweibull2}) => \url{https://en.wikipedia.org/wiki/Weibull_distribution}\cr 
 19) Two-parameter beta distribution (\code{dbeta2}) => \url{https://en.wikipedia.org/wiki/Beta_distribution#Two_parameters_2}\cr
 20) Four-parameter beta distribution (\code{propagate:::dbeta2}) => \url{https://en.wikipedia.org/wiki/Beta_distribution#Four_parameters_2}\cr 
@@ -77,7 +77,7 @@ ALSO: Distribution fitting is highly sensitive to the number of defined histogra
 A list with the following items:
 
 \code{stat}: the by BIC value ascendingly sorted distribution names, including RSS and MSE.\cr
-\code{fit}: a list of the results from \code{\link{nls.lm}} for each distribution model, also sorted ascendingly by BIC values.\cr
+\code{fit}: a list of the results from \code{minpack.lm:::nls.lm} for each distribution model, also sorted ascendingly by BIC values.\cr
 \code{par}: a list of the estimated parameters of the models in \code{fit}.\cr
 \code{se}: a list of the parameters' standard errors, calculated from the square root of the covariance matrices diagonals.\cr
 \code{dens}: a list with all density function used for fitting, sorted as in \code{fit}.\cr
@@ -96,10 +96,6 @@ Andrej-Nikolai Spiess
 Continuous univariate distributions, Volume 1.\cr
 Johnson NL, Kotz S and Balakrishnan N.\cr
 \emph{Wiley Series in Probability and Statistics, 2.ed} (2004).
-
-A guide on probability distributions.\cr
-R-forge distributions core team.\cr
-\url{http://dutangc.free.fr/pub/prob/probdistr-main.pdf}.
 
 Univariate distribution relationships.\cr
 Leemis LM and McQueston JT.\cr

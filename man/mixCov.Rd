@@ -33,11 +33,11 @@ Andrej-Nikolai Spiess
 \references{
 Evaluation of measurement data - Guide to the expression of uncertainty in measurement.\cr
 JCGM 100:2008 (GUM 1995 with minor corrections).\cr
-\url{http://www.bipm.org/utils/common/documents/jcgm/JCGM_100_2008_E.pdf}.
+\url{https://www.bipm.org/documents/20126/2071204/JCGM_100_2008_E.pdf/}.
 
 Evaluation of measurement data - Supplement 1 to the Guide to the expression of uncertainty in measurement - Propagation of distributions using a Monte Carlo Method.\cr
 JCGM 101:2008.\cr
-\url{http://www.bipm.org/utils/common/documents/jcgm/JCGM_101_2008_E.pdf}.
+\url{https://www.bipm.org/documents/20126/2071204/JCGM_100_2008_E.pdf/}.
 }
 
 \examples{

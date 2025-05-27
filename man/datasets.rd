@@ -10,12 +10,6 @@
 Several datasets found in "Annex H" of the GUM that are used in illustrating the different approaches to quantifying measurement uncertainty.
 }
 
-\usage{
-H.2
-H.3
-H.4
-}
-
 \details{
 \bold{H.2: Simultaneous resistance and reactance measurement, Table H.2}\cr
 This example demonstrates the treatment of multiple measurands or output quantities determined simultaneously in the same measurement and the correlation of their estimates. It considers only the random variations of the observations; in actual practice, the uncertainties of corrections for systematic effects would also contribute to the uncertainty of the measurement results. The data are analysed in two different ways with each yielding essentially the same numerical values.\cr 
@@ -30,7 +24,7 @@ The measurands are related to the input quantities by Ohm's law:
 This example illustrates the use of the method of least squares to obtain a linear calibration curve and how the parameters of the fit, the intercept and slope, and their estimated variances and covariance, are used to 
 obtain from the curve the value and standard uncertainty of a predicted correction.\cr 
 H.3.1 The measurement problem:\cr
-A thermometer is calibrated by comparing \emph{n} = 11 temperature readings \eqn{t_k} of the thermometer, each having negligible uncertainty, with corresponding known reference temperatures \eqn{t_{R,k}} in the temperature range 21°C to 27°C to obtain the corrections \eqn{b_k = t_{R,k} - t_k} to the readings. The \emph{measured} corrections \eqn{b_k} and \emph{measured} temperatures \eqn{t_k} are the input quantities of the evaluation. A linear calibration curve \deqn{b(t) = y_1 + y_2(t-t_0) \qquad (\mathrm{H.12})} is fitted to the measured corrections and temperatures by the method of least squares. The parameters \eqn{y_1} and \eqn{y_2}, which are respectively the intercept and slope of the calibration curve, are the two measurands or output 
+A thermometer is calibrated by comparing \emph{n} = 11 temperature readings \eqn{t_k} of the thermometer, each having negligible uncertainty, with corresponding known reference temperatures \eqn{t_{R,k}} in the temperature range 21?C to 27?C to obtain the corrections \eqn{b_k = t_{R,k} - t_k} to the readings. The \emph{measured} corrections \eqn{b_k} and \emph{measured} temperatures \eqn{t_k} are the input quantities of the evaluation. A linear calibration curve \deqn{b(t) = y_1 + y_2(t-t_0) \qquad (\mathrm{H.12})} is fitted to the measured corrections and temperatures by the method of least squares. The parameters \eqn{y_1} and \eqn{y_2}, which are respectively the intercept and slope of the calibration curve, are the two measurands or output 
 quantities to be determined. The temperature \eqn{t_0} is a conveniently chosen exact reference temperature; it is not an independent parameter to be determined by the least-squares fit. Once \eqn{y_1} and \eqn{y_2} are found, along with their  estimated  variances  and  covariance, Equation (H.12)  can  be  used  to  predict  the  value  and  standard uncertainty of the correction to be applied to the thermometer for any value \eqn{t} of the temperature. 
 
 \bold{H.4: Measurement of activity, Table H.7}\cr
@@ -68,11 +62,11 @@ Andrej-Nikolai Spiess, taken mainly from the GUM 2008 manual.
 \references{
 Evaluation of measurement data - Guide to the expression of uncertainty in measurement.\cr
 JCGM 100:2008 (GUM 1995 with minor corrections).\cr
-\url{http://www.bipm.org/utils/common/documents/jcgm/JCGM_100_2008_E.pdf}.
+\url{https://www.bipm.org/documents/20126/2071204/JCGM_100_2008_E.pdf/}.
 
 Evaluation of measurement data - Supplement 1 to the Guide to the expression of uncertainty in measurement - Propagation of distributions using a Monte Carlo Method.\cr
 JCGM 101:2008.\cr
-\url{http://www.bipm.org/utils/common/documents/jcgm/JCGM_101_2008_E.pdf}.
+\url{https://www.bipm.org/documents/20126/2071204/JCGM_100_2008_E.pdf/}.
 }
 
 \examples{

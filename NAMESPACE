@@ -39,7 +39,6 @@ importFrom("stats", BIC, coef, cor, cov, D, dcauchy,
            shapiro.test, var, vcov, dbeta, dchisq, dexp, df, qqplot, 
            weights, formula, as.formula)
 importFrom("utils", flush.console, tail)
-
 import(Rcpp)
 
 ## S3 methods
