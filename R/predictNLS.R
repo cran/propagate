@@ -67,14 +67,6 @@ predictNLS <- function(
     tempDATA <- newdata[i, , drop = FALSE]
     errorDATA <- newerror[i, , drop = FALSE]
     
-    ## create dataframe of variables for 'propagate'
-    ## version 1.0-6: if interval = "prediction", add zero mean for residual variance
-    DAT <- as.numeric(c(COEF, tempDATA)) 
-    names(DAT) <- c(names(COEF), predVAR)
-    DAT <- rbind(DAT, 0)  
-    row.names(DAT) <- NULL 
-    if (interval == "prediction") DAT <- cbind(DAT, rv = c(0, 0))
-    
     ## create (augmented) covariance matrix
     if (interval == "confidence") COV <- mixCov(VCOV, errorDATA^2)
     else {
@@ -87,11 +79,25 @@ predictNLS <- function(
       COV <- mixCov(VCOV, errorDATA^2, rv)
     }
     
+    ## correct diagonals = 0 to small value
+    zeroIdx <- which(diag(COV) == 0)
+    diag(COV)[zeroIdx] <- 1e-12
+    
+    ## create dataframe of variables for 'propagate'
+    ## version 1.0-6: if interval = "prediction", add zero mean for residual variance
+    meanVAL <- as.numeric(c(COEF, tempDATA)) 
+    if (interval == "prediction") meanVAL <- c(meanVAL, 0)
+    if (interval == "confidence") names(meanVAL) <- c(names(COEF), predVAR) 
+    if (interval == "prediction") names(meanVAL) <- c(names(COEF), predVAR, "rv")
+    sdVAL <- sqrt(diag(COV))
+    DAT <- rbind(meanVAL, sdVAL)  
+    row.names(DAT) <- NULL 
+    
     ## version 1.06: include degrees of freedom
     DF <- df.residual(model)
     
     ## call 'propagate'   
-    PROP <- propagate(expr = EXPR, data = DAT, cov = COV, alpha = alpha, df = DF, ...)
+    PROP <- propagate(expr = EXPR, data = DAT, cov = COV, alpha = alpha, df.tot = DF, check = FALSE, ...)
     propLIST[[i]] <- PROP
     
     ## populate outMAT
@@ -102,7 +108,6 @@ predictNLS <- function(
   }
   
   outMAT <- as.data.frame(outMAT)
-  colnames(outMAT) <- c(paste("Prop.", names(outPROP), sep = ""), 
-                        paste("Sim.", names(outSIM), sep = ""))
+  colnames(outMAT) <- c(names(outPROP), names(outSIM))
   return(list(summary = outMAT, prop = propLIST))
 }

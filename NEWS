@@ -1,5 +1,42 @@
+propagate 1.1-0 (08-02-2026)
+New Functions:
+* 'sobol': added Sobol Sensitivity Indices for a 'propagate' object in 4 different variants: "jansen", "sobol", "saltelli", "homma".
+
+Updated Functions:
+* 'propagate' has been seriously overhauled, specifically:
+  1) Argument 'do.sim' has been removed, as MC simulation is now always performed. One can now select between "diag" (only variances used for propagation) or "full" (complete covariance matrix used).
+  2) 'df' has been renamed to 'df.tot', as this is more explainative.
+  3) 'k' has been introduced as an optional coverage factor that overrides the one obtained from WelchSatter.
+  4) 'second.order = TRUE' has been removed, as second-order Taylor propagation now always takes place. Instead, with 'exp.uc' one can now choose if the "1st"- or 1st + "2nd"-order are used for calculating expanded uncertainty.
+  5) The documentation has been revamped. It is now made clearer that the input is either
+        a) statitical summary data with mean, SEM and potential DOF's
+        b) Raw experimental data
+        c) Random samples from distributions
+    'propagate' now guesses the data type based on the number of rows and gives a message (just check, no override).
+  6) MOST IMPORTANT: the MC simulation (GUM Supplement 1) has changed from a multivariate t-distribution with Welch-Satterthwaite-derived total DOF's to a Gaussian Copula with t-margins that have their own DOF's from
+        a) either the third row from 'type' = "stat".
+        b) calculated from the raw measurement values as N-1 when 'type' = "raw" or "sim".
+     This setup is quite unique as the increased uncertainty from low DOF's that can be individual per measurand is now directly translated into a multivariate distribution.
+     The similarity of the input parameters (mean, SEM, DOF's, covariance matrix) and of the constructed Copula are tested and printed with summary(object).
+
+* 'summary.propagate' now has an expanded output for the new 'propagate' results, that is, it now also provides:
+  1) the covariance matrix used as input for classical and MC-derived uncertainty propagation.
+  2) the covariance matrix estimated from the MC evaluation.
+  3) The Frobenius Norm to compare both matrices from 1) and 2).
+  4) the correlation matrix used to construct the Gaussian Copula with t-margins.
+  5) the correlation matrix estimated from the MC evaluation.
+  6) The Frobenius Norm to compare both matrices from 4) and 5).
+  7) A comparison of Copula-input and MC-derived moments/DOFs, to check for similarity and success of the Copula construction/MC sampling.
+  8) Shapiro-Wilks-, Anderson-Darling- and Lilliefors-Tests with 1000-2000x subsampling have been added for robust normality estimation.
+
+* 'bigcor' now uses the "hdf5r" framework as "ff" is somewhat outdated, and it is a bit faster. The large matrices are stored as an .h5-file on the drive.
+* added 3 new distributions to 'fitdistr': Pareto, Levy, Gompertz.
+* added 4 new distributions to 'rDistr': Cosine, Pareto, Levy, Gompertz.
+* 'plot.propagate' now displays 4 vertical lines/borders: alpha-based confidence intervals (GUM: dashed black; MC: solid black), median (orange) and mean (green).
+* 'WelchSatter' now has an argument k that can override the alpha-based coverage factor.
+
 propagate 1.0-7 (24-05-2025)
-* Updated version to make everythiing CRAN-compliant
+* Updated version to make everything CRAN-compliant
 
 propagate 1.0-6 (07-01-2018)
 * Doc to 'print.propagate' has been removed (too trivial...)

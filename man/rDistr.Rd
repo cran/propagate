@@ -4,11 +4,11 @@
 \title{Creating random samples from a variety of useful distributions}
 
 \description{
-These are random sample generators for 22 different continuous distributions which are not readily available as \code{\link{Distributions}} in \R. Some of them are implemented in other specialized packages (i.e. \code{rsn} in package 'sn' or \code{rtrapezoid} in package 'trapezoid'), but here they are collated in a way that makes them easily accessible for Monte Carlo-based uncertainty propagation.
+These are random sample generators for 26 different continuous distributions which are not readily available as \code{\link{Distributions}} in \R. Some of them are implemented in other specialized packages (i.e. \code{rsn} in package 'sn' or \code{rtrapezoid} in package 'trapezoid'), but here they are collated in a way that makes them easily accessible for Monte Carlo-based uncertainty propagation.
 }
 
 \details{
-Random samples can be drawn from the following distributions:\cr
+Random samples can be drawn from the following 26 distributions:\cr
 1) Skewed-normal distribution: \code{propagate:::rsn(n, location = 0, scale = 1, shape = 0)}\cr
 2) Generalized normal distribution: \code{propagate:::rgnorm(n, alpha = 1, xi = 1, kappa = -0.1)}\cr 
 3) Scaled and shifted t-distribution: \code{propagate:::rst(n, mean = 0, sd = 1, df = 2)}\cr 
@@ -33,9 +33,12 @@ with \code{n} = number of samples.\cr
 20) Burr distribution: \code{propagate:::rburr(n, k = 1)}\cr
 21) Chi distribution: \code{propagate:::rchi(n, nu = 5)}\cr
 22) Inverse Chi-Square distribution: \code{propagate:::rinvchisq(n, nu = 5)}\cr
-23) Cosine distribution:  \code{propagate:::rcosine(n, mu = 5, sigma = 1)}\cr
+23) Cosine distribution: \code{propagate:::rcosine(n, mu = 5, sigma = 1)}\cr
+24) Pareto distribution: \code{propagate:::rpareto(n, scale = 0, shape = 1)}\cr
+25) Levy distribution: \code{propagate:::rlevy(n, loc = 0, scale = 1)}\cr
+26) Gompertz distribution: \code{propagate:::rgompertz(n, shape = 0, rate = 1)}
 
-1) - 12), 17) - 22) use the inverse cumulative distribution function as mapping functions for \code{\link{runif}} (\bold{Inverse Transform Method}):\cr
+1) - 12), 17) - 22, 24-26) use the inverse cumulative distribution function as mapping functions for \code{\link{runif}} (\bold{Inverse Transform Method}):\cr
 (1) \eqn{U \sim \mathcal{U}(0, 1)}\cr
 (2) \eqn{Y = F^{-1}(U, \beta)}
 
@@ -48,7 +51,6 @@ with \code{n} = number of samples.\cr
 (4) \eqn{U \sim \mathcal{U}(0, 1)}\cr
 (5) \eqn{X \sim \mathcal{U}(x_{min}, x_{max})}\cr
 (6) \eqn{Y \iff U \le A \cdot \mathcal{U}(X, x_{min}, x_{max})/F(X, \beta)}\cr
-
 These four distributions are coded in a vectorized approach and are hence not much slower than implementations in C/C++ (0.2 - 0.5 sec for 100000 samples; 3 GHz Quadcore processor, 4 GByte RAM). The code for the random generators is in file "distr-samplers.R".
 }
 
@@ -69,9 +71,6 @@ See also \code{\link{propagate}}, in which GUM 2008 Supplement 1 examples use th
 Rejection Sampling.\cr
 \url{https://www.r-bloggers.com/2011/06/rejection-sampling/}.
 
-An example of rejection sampling.\cr
-\url{http://www.mas.ncl.ac.uk/~ndjw1/teaching/sim/reject/circ.html}.
-
 \bold{Rejection Sampling in general:}\cr
 Non-uniform random variate generation.\cr
 Devroye L.\cr
@@ -87,11 +86,11 @@ Johnson NL, Kotz S and Balakrishnan N.\cr
 \dontrun{
 ## First we create random samples from the
 ## von Mises distribution.
-X <- propagate:::rmises(1000000, mu = 1, kappa = 2)
+X <- propagate:::rmises(10000, mu = 1, kappa = 2)
 
-## then we fit all available distributions
+## Then we fit all available distributions
 ## with 'fitDistr'.
-fitDistr(X, nbin = 200)
+fitDistr(X, nbin = 200, distsel = 1:22)
 ## => von Mises wins! (lowest BIC)
 }
 }

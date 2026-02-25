@@ -372,3 +372,18 @@ rcosine <- function(n, mu = 5, sigma = 1)
   
   return(OUT[1:n])
 }
+
+## Random samples from the Pareto distribution,
+## taken from package "rmutil"
+rpareto <- function(n, scale = 0, shape = 1) scale / runif(n)^(1/shape)
+
+## Random samples from the Levy distribution,
+## taken from package "rmutil"
+rlevy <- rlevy <- function(n, loc = 0, scale = 1) loc + scale / (2 * qnorm(runif(n))^2)
+
+## Random samples from the Gompertz distribution, 
+## taken from https://en.wikipedia.org/wiki/Gompertz_distribution
+rgompertz <- function(n, shape = 0, rate = 1) log(1 - log(runif(n))/shape)/rate
+
+
+

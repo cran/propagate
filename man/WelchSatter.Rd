@@ -9,16 +9,17 @@ Calculates the Welch-Satterthwaite approximation to the 'effective degrees of fr
 }
 
 \usage{
-WelchSatter(ui, ci = NULL, df = NULL, dftot = NULL, uc = NULL, alpha = 0.05)
+WelchSatter(ui, ci = NULL, df = NULL, df.tot = NULL, uc = NULL, alpha = 0.05, k = NULL)
 }
 
 \arguments{
   \item{ui}{the uncertainties \eqn{u_i} for each variable \eqn{x_i}.}
   \item{ci}{the sensitivity coefficients \eqn{c_i = \partial y/\partial x_i}.}   
   \item{df}{the degrees of freedom for the samples, \eqn{\nu_i}.}
-  \item{dftot}{an optional known total degrees of freedom for the system, \eqn{\nu_{\mathrm{tot}}}. Overrides the internal calculation of \eqn{\nu_{\mathrm{ws}}}.} 
+  \item{df.tot}{an optional known total degrees of freedom for the system, \eqn{\nu_{\mathrm{tot}}}. Overrides the internal calculation of \eqn{\nu_{\mathrm{ws}}}.} 
   \item{uc}{the combined uncertainty, u(y).}
   \item{alpha}{the significance level for the t-statistic. See 'Details'.}
+  \item{k}{an external coverage factor, say 2, that overrides the one obtained from defining \code{alpha}.}
 }
 
 \details{

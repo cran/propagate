@@ -4,12 +4,12 @@
 \title{Fitting distributions to observations/Monte Carlo simulations}
 
 \description{
-This function fits 32 different continuous distributions by (weighted) NLS to the histogram of Monte Carlo simulation results as obtained by \code{\link{propagate}} or any other vector containing large-scale observations. Finally, the fits are sorted by ascending \code{\link{BIC}}. 
+This function fits 35 different continuous distributions by (weighted) NLS to the histogram of Monte Carlo simulation results as obtained by \code{\link{propagate}} or any other vector containing large-scale observations. Finally, the fits are sorted by ascending \code{\link{BIC}}. 
 }
 
 \usage{
 fitDistr(object, nbin = 100, weights = FALSE, verbose = TRUE, 
-         brute = c("fast", "slow"), plot = c("hist", "qq"),  distsel = NULL, ...)
+         brute = c("fast", "slow"), plot = c("hist", "qq", "none"),  distsel = NULL, ...)
 }
 
 \arguments{
@@ -24,7 +24,7 @@ fitDistr(object, nbin = 100, weights = FALSE, verbose = TRUE,
 }
 
 \details{
-Fits the following 32 distributions using (weighted) residual sum-of-squares as the minimization criterion for \code{minpack.lm:::nls.lm}:\cr
+Fits the following 35 distributions using (weighted) residual sum-of-squares as the minimization criterion for \code{minpack.lm:::nls.lm}:\cr
 1) Normal distribution (\code{dnorm}) => \url{https://en.wikipedia.org/wiki/Normal_distribution}\cr
 2) Skewed-normal distribution (\code{propagate:::dsn}) => \url{https://en.wikipedia.org/wiki/Skew_normal_distribution}\cr
 3) Generalized normal distribution (\code{propagate:::dgnorm}) => \url{https://en.wikipedia.org/wiki/Generalized_normal_distribution}\cr 
@@ -57,6 +57,9 @@ Fits the following 32 distributions using (weighted) residual sum-of-squares as 
 30) Chi distribution (\code{dchi}) => \url{https://en.wikipedia.org/wiki/Chi_distribution}\cr
 31) Inverse Chi-square distribution (\code{dinvchisq}) => \url{https://en.wikipedia.org/wiki/Inverse-chi-squared_distribution}\cr
 32) Cosine distribution (\code{dcosine}) => \url{https://en.wikipedia.org/wiki/Raised_cosine_distribution}\cr
+33) Pareto distribution (\code{dpareto}) => \url{https://en.wikipedia.org/wiki/Pareto_distribution}\cr
+34) Levy distribution (\code{dlevy}) => \url{https://en.wikipedia.org/wiki/Levy_distribution}\cr
+35) Gompertz distribution (\code{dgompertz} => \url{https://en.wikipedia.org/wiki/Gompertz_distribution}\cr
 
 All distributions are fitted with a brute force approach, in which the parameter space is extended over three orders of magnitude \eqn{(0.1, 1, 10)\times \beta_i} when \code{brute = "fast"}, or five orders \eqn{(0.01, 0.1, 1, 10, 100)\times \beta_i} when \code{brute = "slow"}. Approx. 20-90s are needed to fit for the fast version, depending mainly on the number of bins. 
 
@@ -103,65 +106,16 @@ Leemis LM and McQueston JT.\cr
 }
 
 \examples{
-\dontrun{
 ## Linear example, small error
 ## => Normal distribution.
-EXPR1 <- expression(x + 2 * y)
-x <- c(5, 0.01)
+## Don't set 'distsel' for full test
+EXPR1 <- expression(x + y)
+x <- c(5, 0.1)
 y <- c(1, 0.01)
 DF1 <- cbind(x, y)
 RES1 <- propagate(expr = EXPR1, data = DF1, type = "stat", 
-                  do.sim = TRUE, verbose = TRUE)
-fitDistr(RES1)
-
-## Ratio example, larger error
-## => Gamma distribution.
-EXPR2 <- expression(x/2 * y)
-x <- c(5, 0.1)
-y <- c(1, 0.02)
-DF2 <- cbind(x, y)
-RES2 <- propagate(expr = EXPR2, data = DF2, type = "stat", 
-                  do.sim = TRUE, verbose = TRUE)
-fitDistr(RES2)
-
-## Exponential example, large error
-## => Log-Normal distribution.
-EXPR3 <- expression(x^(2 * y))
-x <- c(5, 0.1)
-y <- c(1, 0.1)
-DF3 <- cbind(x, y)
-RES3 <- propagate(expr = EXPR3, data = DF3, type = "stat", 
-                  do.sim = TRUE, verbose = TRUE)
-fitDistr(RES3)
-
-## Rectangular input distributions result
-## in Curvilinear Trapezoidal output distribution.
-A <- runif(100000, 20, 25)
-B <- runif(100000, 3, 3.5)
-DF4 <- cbind(A, B)
-EXPR4 <- expression(A + B)
-RES4 <- propagate(EXPR4, data = DF4, type = "sim", 
-                 use.cov = FALSE, do.sim = TRUE)
-fitDistr(RES4)        
-
-## Fitting with 1/counts as weights.
-EXPR5 <- expression(x + 2 * y)
-x <- c(5, 0.05)
-y <- c(1, 0.05)
-DF5 <- cbind(x, y)
-RES5 <- propagate(expr = EXPR5, data = DF5, type = "stat", 
-                  do.sim = TRUE, verbose = TRUE, weights = TRUE)
-fitDistr(RES5)
-
-## Using only selected distributions.
-EXPR6 <- expression(x + sin(y))
-x <- c(5, 0.1)
-y <- c(1, 0.2)
-DF6 <- cbind(x, y)
-RES6 <- propagate(expr = EXPR6, data = DF6, type = "stat", 
-                  do.sim = TRUE)
-fitDistr(RES6, distsel = c(1:10, 15, 28))
-}
+                  nsim = 100000, check = FALSE)
+fitDistr(RES1, nbin = 200, distsel = 1:10)
 }   
 
 \keyword{algebra}

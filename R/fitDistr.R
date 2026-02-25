@@ -4,7 +4,7 @@ fitDistr <- function(
   weights = FALSE,
   verbose = TRUE, 
   brute = c("fast", "slow"),
-  plot = c("hist", "qq"),  
+  plot = c("hist", "qq", "none"),  
   distsel = NULL,
   ...)
 {
@@ -101,8 +101,10 @@ fitDistr <- function(
                  "Burr",
                  "Chi",
                  "Inverse Chi-Square",
-                 "Cosine"
-  )
+                 "Cosine",
+                 "Pareto",
+                 "Levy",
+                 "2P Gompertz")
   
   ## define distribution functions
   funLIST <- list(dnorm, 
@@ -136,8 +138,10 @@ fitDistr <- function(
                   dburr,
                   dchi,
                   dinvchisq,
-                  dcosine
-  )
+                  dcosine,
+                  dpareto,
+                  dlevy,
+                  dgompertz)
   
   ## define start parameter list
   parLIST <- list(norm = c(mean = MEAN, sd = SD), 
@@ -172,7 +176,10 @@ fitDistr <- function(
                   burr = c(k = 1),
                   chi = c(nu = 5),
                   invchisq = c(nu = 5),
-                  cosine = c(mu = MEAN, sigma = SD)
+                  cosine = c(mu = MEAN, sigma = SD),
+                  pareto = c(scale = MEAN, shape = SD),
+                  levy = c(loc = MEAN, scale = SD), 
+                  gompertz = c(shape = MEAN, rate = SD)
   )
                   
   ## version 1-0-6: check for function selection
@@ -204,7 +211,7 @@ fitDistr <- function(
       if (verbose) counter(j)
       PARS <- GRID[j, ]
       FIT <- try(nls.lm(par = PARS, fn = optFun, densfun = funLIST[[sel]], quantiles = DENS$x,
-                        density = DENS$y, control = nls.lm.control(maxiter = 10000, maxfev = 10000)), silent = TRUE)
+                        density = DENS$y, control = nls.lm.control(maxiter = 100000, maxfev = 100000)), silent = TRUE)
       if (inherits(FIT, "try-error")) rssVEC[j] <- NA else rssVEC[j] <- FIT$deviance     
     }
     
@@ -212,7 +219,7 @@ fitDistr <- function(
     WHICH <- which.min(rssVEC) 
     bestPAR <- GRID[WHICH, ]
     FIT <- try(nls.lm(par = bestPAR, fn = optFun, densfun = funLIST[[sel]], quantiles = DENS$x,
-                      density = DENS$y, control = nls.lm.control(maxiter = 10000, maxfev = 10000)), silent = TRUE)      
+                      density = DENS$y, control = nls.lm.control(maxiter = 100000, maxfev = 100000)), silent = TRUE)      
     ## calculate GOF measures
     if (inherits(FIT, "try-error")) {
       FIT <- NA
@@ -223,7 +230,7 @@ fitDistr <- function(
       RSS[i] <- FIT$fvec^2
       MSE[i] <- mean(FIT$fvec^2, na.rm = TRUE)
     }    
-    cat("\n\n")
+    if (verbose) cat("\n\n")
   } 
   
   ## aggregate and sort ascending by AIC

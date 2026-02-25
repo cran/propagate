@@ -1,17 +1,22 @@
 propagate <- function(
 expr, 
 data, 
-second.order = TRUE,
-do.sim = TRUE, 
-cov = TRUE, 
-df = NULL,
+type = c("stat", "raw", "sim"),
+cov = c("diag", "full"), 
+df.tot = NULL,
+k = NULL, 
 nsim = 1000000,
 alpha = 0.05,
+exp.uc = c("1st", "2nd"),
+check = TRUE,
 ...
 )
 {            
   op <- options(warn = -1)
   on.exit(options(op))
+  type <- match.arg(type)
+  if (is.matrix(cov)) cov <- cov else cov <- match.arg(cov)
+  exp.uc <- match.arg(exp.uc)
   
   ## version 1.0-4: convert function to expression
   if (is.function(expr)) {
@@ -31,58 +36,103 @@ alpha = 0.05,
   if (!isFun) VARS <- all.vars(expr)  
   m <- match(VARS, colnames(data))
   
+  ## version 1.0-8: if expr does not use all data columns, select
+  if (length(m) != ncol(data)) data <- data[, m]
+    
   if (any(is.na(m))) stop("propagate: variable names of input dataframe and expression do not match!")
   if (length(unique(m)) != length(m)) stop("propagate: some variable names are repetitive!")
   
   DATA <- data
   EXPR <- expr
   
-  ## create variables from input data
-  ## version 1.0-5: check for simulated data => large nrow(data)
-  if (nrow(data) > 3) {
-    meanVAL <- apply(DATA, 2, function(x) mean(x, na.rm = TRUE))
-    sdVAL <- apply(DATA, 2, function(x) sd(x, na.rm = TRUE))
-    dfVAL <- NULL
-    isRaw <- TRUE
-  } else {
-    meanVAL <- DATA[1, ]
-    sdVAL <- DATA[2, ] 
-    dfVAL <- if (nrow(DATA) == 3) DATA[3, ] else NULL
-    isRaw <- FALSE
-  }
-       
-  ## stat data: if no covariance matrix is supplied, create one with diagonal variances
-  if (is.logical(cov) & !isRaw) {
-    SIGMA <- diag(sdVAL^2, nrow = length(VARS), ncol = length(VARS))    
-    colnames(SIGMA) <- rownames(SIGMA) <- colnames(DATA)
-  } 
-  
-  ## raw data: if no covariance matrix is supplied, create one with off-diagonals or not
-  if (is.logical(cov) & isTRUE(cov) & isRaw) {
-    SIGMA <- cov(data)   
-  } 
-  if (is.logical(cov) & isFALSE(cov) & isRaw) {
-    SIGMA <- cov(data) 
-    SIGMA[upper.tri(SIGMA)] <- SIGMA[lower.tri(SIGMA)] <- 0 
-  } 
-  
   ## if covariance matrix is supplied, check for symmetry and matching names
   if (is.matrix(cov)) {
     if (NCOL(cov) != NROW(cov)) stop("propagate: 'cov' is not a symmetric matrix!")
     m <- match(colnames(cov), colnames(DATA))            
     if (any(is.na(m))) stop("propagate: names of input dataframe and var-cov matrix do not match!")             
-    if (length(unique(m)) != length(m)) stop("propagate: some names of the var-cov matrix are repetitive!")             
-    SIGMA <- cov
+    if (length(unique(m)) != length(m)) stop("propagate: some names of the var-cov matrix are repetitive!")        
   }
   
-  ## version 1.0-5: replace possible NA's in covariance matrix with 0's
-  SIGMA[is.na(SIGMA)] <- 0  
+  ############## version 1.0-8: Create variables from input data, use the direct 'type's ##############
+  
+  ## 1) statistical summaries
+  if (type == "stat") {
+    meanVAL <- DATA[1, ]
+    sdVAL <- DATA[2, ] 
+    dfVAL <- if (nrow(DATA) == 3) DATA[3, ] else rep(1000, ncol(DATA))
+    
+    if (nrow(DATA) == 2 | nrow(DATA) == 3) cat("I see data with 2 or 3 rows ... type = 'stat' seems correct!\n")
+    else cat("I don't see data with 2 or 3 rows ... type = 'stat' probably correct!\n")
+    
+    if (is.matrix(cov)) SIGMA <- cov 
+    else if (cov == "diag") {
+      SIGMA <- diag(sdVAL^2, nrow = length(VARS), ncol = length(VARS))    
+      colnames(SIGMA) <- rownames(SIGMA) <- colnames(DATA)
+    } 
+    else if (cov == "full") stop("Cannot use full covariance matrix with summary data. Please supply an external one...")
+    COR <- cov2cor(SIGMA)
+  }
+ 
+  ## 2) experimental samples
+  if (type == "raw") {
+    N <- apply(DATA, 2, function(x) sum(!is.na(x), na.rm = TRUE))
+    meanVAL <- apply(DATA, 2, function(x) mean(x, na.rm = TRUE))
+    sdVAL <- apply(DATA, 2, function(x) sd(x, na.rm = TRUE))/sqrt(N)
+    dfVAL <- N - 1
+    
+    if (nrow(DATA) > 3 & nrow(DATA) < 1000) cat("I see data with 3 < rows < 1000 ... type = 'raw' seems correct!\n")
+    else cat("I don't see data with 3 < rows < 1000 ... type = 'raw' probably correct!\n")
+    
+    if (is.matrix(cov)) {
+      SIGMA <- cov
+      COR <- cov2cor(SIGMA)
+    }
+    else if (cov == "diag") {
+      SIGMA <- diag(sdVAL^2, nrow = length(VARS), ncol = length(VARS))    
+      colnames(SIGMA) <- rownames(SIGMA) <- colnames(DATA)
+      COR <- cov2cor(SIGMA)
+    } 
+    else if (cov == "full") {
+      notNA <- !is.na(DATA)
+      Npairs <- t(notNA) %*% notNA  
+      SIGMA <- cov(DATA, use = "pairwise.complete.obs")/Npairs
+      COR <- cor(DATA, use = "pairwise.complete.obs")
+    }
+  }
+  
+  ## 3) simulated distribution data
+  if (type == "sim") {
+    N <- nrow(DATA)
+    meanVAL <- apply(DATA, 2, function(x) mean(x, na.rm = TRUE))
+    sdVAL <- apply(DATA, 2, function(x) sd(x, na.rm = TRUE))
+    dfVAL <- rep(N - 1, ncol(DATA))
+    
+    if (nrow(DATA) > 1000) cat("I see data with 1000 < rows ... type = 'sim' seems correct!\n")
+    else cat("I don't see data with 1000 < rows ... type = 'sim' probably correct!\n")
+    
+    if (is.matrix(cov)) {
+      SIGMA <- cov
+      COR <- cov2cor(SIGMA)
+    }
+    else if (cov == "diag") {
+      SIGMA <- diag(sdVAL^2, nrow = length(VARS), ncol = length(VARS))    
+      colnames(SIGMA) <- rownames(SIGMA) <- colnames(DATA)
+      COR <- cov2cor(SIGMA)
+    }
+    else if (cov == "full") {
+      SIGMA <- cov(DATA, use = "pairwise.complete.obs")
+      COR <- cor(DATA, use = "pairwise.complete.obs")
+    }
+  }  
+  
+  ## version 1.0-5: replace possible NA's/NaN's in covariance/correlation matrix with 0's
+  SIGMA[is.na(SIGMA)] <- 0; SIGMA[is.nan(SIGMA)] <- 0
+  COR[is.na(COR)] <- 0; COR[is.nan(COR)] <- 0
   
   ## version 1.0-5: No diagonals with 0, 
-  ## otherwise tmvtnorm:::checkSymmetricPositiveDefinite throws an error!
   if (any(diag(SIGMA) == 0)) {
     DIAG <- diag(SIGMA)
-    DIAG[DIAG == 0] <- 2E-16
+    DIAG[DIAG == 0] <- 1E-6
     diag(SIGMA) <- DIAG
   }
   
@@ -115,92 +165,116 @@ alpha = 0.05,
   }
   
   ## second-order mean: firstMEAN + 0.5 * tr(H.S) 
-  if (second.order) {
-    HESS <- try(makeHess(EXPR, m2), silent = TRUE)
-    if (!inherits(HESS, "try-error")) evalHESS <- try(sapply(HESS, eval, envir = as.list(meanVAL)), silent = TRUE)
-    if (inherits(HESS, "try-error")) evalHESS <- try(numHess(EXPR, as.list(meanVAL)), silent = TRUE)
-    if (!inherits(evalHESS, "try-error")) evalHESS <- matrix(evalHESS, ncol = length(meanVAL), byrow = TRUE) else evalHESS <- NA  
-    
-    valMEAN2 <- try(0.5 * tr(evalHESS %*% SIGMA), silent = TRUE)
-    if (!inherits(valMEAN2, "try-error")) {
-      MEAN2 <- MEAN1 + valMEAN2
-    } else {
-      message("propagate: there was an error in calculating the second-order mean")
-      MEAN2 <- NA
-    }
-    
-    ## second-order variance: firstVAR + 0.5 * tr(H.S.H.S)
-    valVAR2 <- try(0.5 * tr(evalHESS %*% SIGMA %*% evalHESS %*% SIGMA), silent = TRUE)
-    if (!inherits(valVAR2, "try-error")) {
-      VAR2 <- VAR1 + valVAR2
-    } else {
-      message("propagate: there was an error in calculating the second-order variance")
-      VAR2 <- NA
-    }
-  } else MEAN2 <- VAR2 <- HESS <- evalHESS <- NA
+  HESS <- try(makeHess(EXPR, m2), silent = TRUE)
+  if (!inherits(HESS, "try-error")) evalHESS <- try(sapply(HESS, eval, envir = as.list(meanVAL)), silent = TRUE)
+  if (inherits(HESS, "try-error")) evalHESS <- try(numHess(EXPR, as.list(meanVAL)), silent = TRUE)
+  if (!inherits(evalHESS, "try-error")) evalHESS <- matrix(evalHESS, ncol = length(meanVAL), byrow = TRUE) else evalHESS <- NA  
+ 
+  valMEAN2 <- try(0.5 * tr(evalHESS %*% SIGMA), silent = TRUE)
+  if (!inherits(valMEAN2, "try-error")) {
+    MEAN2 <- MEAN1 + valMEAN2
+  } else {
+    warning("propagate: there was an error in calculating the second-order mean")
+    MEAN2 <- NA
+  }
+  
+  ## second-order variance: firstVAR + 0.5 * tr(H.S.H.S)
+  valVAR2 <- try(0.5 * tr(evalHESS %*% SIGMA %*% evalHESS %*% SIGMA), silent = TRUE)
+  if (!inherits(valVAR2, "try-error")) {
+    VAR2 <- VAR1 + valVAR2
+  } else {
+    message("propagate: there was an error in calculating the second-order variance")
+    VAR2 <- NA
+  }
   
   ## total mean and variance  
-  if (second.order) totalVAR <- VAR2 else totalVAR <- VAR1
-  if (second.order) totalMEAN <- MEAN2 else totalMEAN <- MEAN1
+  if (exp.uc == "1st") {
+    totalMEAN <- MEAN1
+    totalVAR <- VAR1
+  }
+  if (exp.uc == "2nd") {
+    totalMEAN <- MEAN2
+    totalVAR <- VAR2 
+  }
   errorPROP <- sqrt(totalVAR)  
   
   ## sensitivity index/contribution/relative contribution
   if (is.numeric(evalGRAD)) {
     sensitivity <- evalGRAD
+    names(sensitivity) <- colnames(DATA)
     contribution <- outer(sensitivity, sensitivity, "*") * SIGMA
     rel.contribution <- abs(contribution)/sum(abs(contribution), na.rm = TRUE)
-  } else sensitivity <- contribution <- rel.contribution <- NA
+  } else sensitivity <- contribution <- rel.contribution <- NULL
   
   ## WS degrees of freedom, coverage factor and expanded uncertainty
-  if (!is.null(dfVAL)) dfVAL[is.na(dfVAL)] <- 1E6
-  if (is.null(dfVAL)) dfVAL <- rep(1E6, ncol(DATA))
-  ws <- WelchSatter(ui = sqrt(diag(SIGMA)), ci = sensitivity, df = dfVAL, dftot = df, uc = errorPROP, alpha = alpha)
+  if (!is.null(dfVAL)) dfVAL[is.na(dfVAL)] <- 1000
+  if (is.null(dfVAL)) dfVAL <- rep(1000, ncol(DATA))
+  ws <- WelchSatter(ui = sqrt(diag(SIGMA)), ci = sensitivity, df = dfVAL, df.tot = df.tot, uc = errorPROP, alpha = alpha, k = k)
   
   ## confidence interval based on either first- or second-order mean
-  if (is.na(MEAN2)) confMEAN <- MEAN1 else confMEAN <- MEAN2
+  if (exp.uc == "1st") confMEAN <- MEAN1 else confMEAN <- MEAN2
   confPROP <- confMEAN + c(-1, 1) * ws$u.exp
   names(confPROP) <- paste(c(alpha/2, 1 - alpha/2) * 100, "%", sep = "")
   
-  ################## Monte-Carlo simulation using multivariate t-distribution #####################
-  if (do.sim) {  
-    if (is.na(ws$ws.df) | is.infinite(ws$ws.df)) DF <- 1E6 else DF <- ws$ws.df
-    if (is.numeric(df)) DF <- df 
-
-    ## if raw data, don't create Monte Carlo data
-    if (!isRaw) {
-      datSIM <- rtmvt(nsim, mean = meanVAL, sigma = SIGMA, df = floor(DF)) 
-      colnames(datSIM) <- colnames(DATA)      
-    } else datSIM <- DATA
-      
-    ## try vectorized evaluation, which is much faster  
-    resSIM <- try(eval(EXPR, as.data.frame(datSIM)), silent = TRUE) 
-    
-    ## use 'row-wise' method if 'vectorized' throws an error
-    if (inherits(resSIM, "try-error")) {
-      message("propagate: using 'vectorized' evaluation gave an error. Switching to 'row-wise' evaluation...")
-      resSIM <- apply(datSIM, 1, function(x) eval(EXPR, envir = as.list(x)))     
-    }
-    
-    ## alpha-based confidence interval of MC simulations
-    confSIM <- quantile(resSIM, c(alpha/2, 1 - (alpha/2)), na.rm = TRUE) 
-    
-    ## warning in case of single evaluated result
-    if (length(unique(resSIM)) == 1) message("propagate: Monte Carlo simulation gave unique repetitive values! Are all derivatives constants?")   
-  } else resSIM <- datSIM <- confSIM <- allSIM <- NA 
+  ################# version 1.0-8 : Monte-Carlo simulation copula of t-distributions #####################
+  ## if 'sim' data, don't create Monte Carlo data
+  if (type == "raw" | type == "stat") {
+    COPULA <- normalCopula(param = P2p(COR), dim = ncol(DATA), dispstr = "un")
+    MARGINS <- rep("t", ncol(DATA))
+    if (!is.null(df.tot)) dfVAL <- rep(df.tot, ncol(DATA))
+    paramMargins <- lapply(dfVAL, function(df) list(df = df))
+    MVD <- mvdc(copula = COPULA, margins = MARGINS, paramMargins = paramMargins)
+    datSIM <- rMvdc(nsim, MVD); datSIM2 <- rMvdc(nsim, MVD)
+    colnames(datSIM) <- colnames(datSIM2) <- colnames(DATA)
+    varcor <- sqrt(dfVAL/(dfVAL - 2))
+    datSIM <- sweep(datSIM, 2, varcor, "/"); datSIM2 <- sweep(datSIM2, 2, varcor, "/")
+    datSIM <- sweep(datSIM, 2, sdVAL, "*"); datSIM2 <- sweep(datSIM2, 2, sdVAL, "*")
+    datSIM <- sweep(datSIM, 2, meanVAL, "+"); datSIM2 <- sweep(datSIM2, 2, meanVAL, "+")
+  } else {datSIM <- DATA; datSIM2 <- NULL}
   
+  ## version 1.0-8: covariance and correlation of MC Copula matrix
+  covMC <- cov(datSIM, use = "pairwise.complete.obs")
+  corMC <- cor(datSIM, use = "pairwise.complete.obs")
+  frobCOV <- norm(covMC - SIGMA, "F")/norm(SIGMA, "F")
+  frobCOR <- norm(corMC - COR, "F")/norm(COR, "F")
   
-  outPROP <- c(Mean.1 = MEAN1, Mean.2 = MEAN2, sd.1 = sqrt(VAR1), sd.2 = sqrt(VAR2), 
+  ## version 1.0-8: fit scaled/shifted t-distribution on Copula marginals
+  if (check) {
+    cat("Checking Copula margins with scaled/shifted t-distribution...\n")
+    fitDIST <- apply(datSIM, 2, function(x) fitDistr(x, distsel = 5, nbin = 1000, verbose = FALSE, plot = "none")$bestpar)
+    fitDIST[2, ] <- fitDIST[2, ] * sqrt(dfVAL/(dfVAL - 2))  # convert scale to sd
+  } else fitDIST <- NULL
+  
+  ## try vectorized evaluation, which is much faster  
+  resSIM <- try(eval(EXPR, envir = as.data.frame(datSIM)), silent = TRUE) 
+  
+  ## use 'row-wise' method if 'vectorized' throws an error
+  if (inherits(resSIM, "try-error")) {
+    message("propagate: using 'vectorized' evaluation gave an error. Switching to 'row-wise' evaluation...")
+    resSIM <- apply(datSIM, 1, function(x) eval(EXPR, envir = as.list(x)))     
+  }
+    
+  ## alpha-based confidence interval of MC simulations
+  confSIM <- quantile(resSIM, c(alpha/2, 1 - (alpha/2)), na.rm = TRUE) 
+    
+  ## warning in case of single evaluated result
+  if (length(unique(resSIM)) == 1) message("propagate: Monte Carlo simulation gave unique repetitive values! Are all derivatives constants?")   
+  
+  outPROP <- c(mean.1 = MEAN1, mean.2 = MEAN2, u.1 = sqrt(VAR1), u.2 = sqrt(VAR2), 
                confPROP[1], confPROP[2])   
   
-  outSIM <- c(Mean = mean(resSIM, na.rm = TRUE), sd = sd(resSIM, na.rm = TRUE), 
-              Median = median(resSIM, na.rm = TRUE), MAD = mad(resSIM, na.rm = TRUE),
+  outSIM <- c(mean.MC = mean(resSIM, na.rm = TRUE), u.MC = sd(resSIM, na.rm = TRUE), 
+              median.MC = median(resSIM, na.rm = TRUE), mad.MC = mad(resSIM, na.rm = TRUE),
               confSIM[1], confSIM[2])
   
+  outDAT <- rbind(meanVAL, sdVAL, dfVAL)
+  
   OUT <- list(gradient = GRAD, evalGrad = evalGRAD,
-              hessian = HESS, evalHess = evalHESS,
-              rel.contr  = rel.contribution, covMat = SIGMA, ws.df = floor(ws$ws.df), 
-              k = ws$k, u.exp = ws$u.exp, resSIM = resSIM, datSIM = datSIM, 
-              prop = outPROP, sim = outSIM, expr = EXPR, data = DATA, alpha = alpha)
+              hessian = HESS, evalHess = evalHESS, 
+              rel.contr  = rel.contribution, covMat = SIGMA, covMat.MC = covMC,
+              corMat = COR, corMat.MC = corMC, frobCOV = frobCOV, frobCOR = frobCOR, 
+              ws.df = floor(ws$ws.df), k = ws$k, u.exp = ws$u.exp, resSIM = resSIM, datSIM = datSIM, datSIM2 = datSIM2, 
+              prop = outPROP, sim = outSIM, expr = EXPR, data = outDAT, alpha = alpha, nsim = nsim, check = fitDIST, type = type)
   
   class(OUT) <- "propagate"
   return(OUT)                                     

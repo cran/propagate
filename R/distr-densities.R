@@ -189,9 +189,7 @@ dinvgamma <- function(x, shape = 1, scale = 10)
 
 ## Rayleigh distribution, 
 ## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
-drayleigh <- function(x, mu = 1, sigma = 1) {
-  (x - mu)/(sigma^2 * exp((x - mu)^2/(2 * sigma^2)))
-}
+drayleigh <- function(x, mu = 1, sigma = 1) (x - mu)/(sigma^2 * exp((x - mu)^2/(2 * sigma^2)))
 
 ## Burr VIII distribution,
 ## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
@@ -208,4 +206,21 @@ dinvchisq <- function(x, nu) x^(-1 - nu/2)/((2^(nu/2) * gamma(nu/2)) * exp(1/(2 
 ## Cosine distribution,
 ## taken from PDF in Mathematica's "Ultimate Univariate Probability Distribution Explorer"
 dcosine <- function(x, mu, sigma) (1 + cos((pi * (x - mu))/sigma))/(2 * sigma)
+
+## Pareto distribution,
+## taken from package "rmutil"
+dpareto <- function(x, scale, shape) ifelse(x < scale, 0, shape * scale^shape / x^(shape + 1))
+
+## Levy distribution
+## taken from package "rmutil"
+dlevy <- function(x, loc = 0, scale = 1) {
+  z <- x - loc
+  d <- ifelse(z <= 0, 0, sqrt(scale / (2 * pi)) * exp(-scale / (2 * z)) / z^1.5)
+  return(d)
+}
+
+## Gompertz distribution, taken from https://en.wikipedia.org/wiki/Gompertz_distribution
+dgompertz <- function(x, shape, rate) ifelse(x < 0, 0, shape * rate * exp(rate * x - shape * (exp(rate * x) - 1)))
+
+
 

@@ -33,7 +33,7 @@ b <- rnorm(100000, 5, 0.1)
 c <- runif(100000, 6, 7)
 
 DAT1 <- makeDat(EXPR1)
-propagate(EXPR1, DAT1, type = "sim", cov = FALSE)
+propagate(EXPR1, DAT1, type = "sim", cov = "diag")
 }   
 
 \keyword{algebra}

@@ -21,14 +21,10 @@ predictNLS,
 WelchSatter,
 bigcor,
 interval,
-stochContr
+stochContr, 
+sobol
 )
 
-importFrom("ff", ff)
-importFrom("MASS", mvrnorm)
-importFrom("tmvtnorm", rtmvt)
-importFrom("Rcpp", sourceCpp)
-importFrom("minpack.lm", nls.lm, nls.lm.control)
 importFrom("graphics", abline, barplot, boxplot, hist, lines,
            par, title, grid, segments)
 importFrom("stats", BIC, coef, cor, cov, D, dcauchy,
@@ -37,9 +33,13 @@ importFrom("stats", BIC, coef, cor, cov, D, dcauchy,
            qbeta, qnorm, qt, quantile, rbinom, rchisq,
            residuals, rexp, rgamma, rnorm, rt, runif, sd,
            shapiro.test, var, vcov, dbeta, dchisq, dexp, df, qqplot, 
-           weights, formula, as.formula)
+           weights, formula, as.formula, cov2cor, complete.cases)
 importFrom("utils", flush.console, tail)
 import(Rcpp)
+importFrom("copula", normalCopula, mvdc, rMvdc, P2p)
+importFrom("hdf5r", H5File)
+importFrom("minpack.lm", nlsLM, nls.lm, nls.lm.control)
+importFrom("crayon", red)
 
 ## S3 methods
 S3method(print, propagate)
